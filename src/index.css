@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #aa2478;
+  --color-primary-hover: rgba(170, 36, 121, 0.61);
+  --color-primary-active: rgba(170, 36, 121, 0.664);
+}
+
+.ant-menu-item-selected {
+  background-color: var(--color-primary-active) !important;
+  color: var(--color-primary) !important;
+}
+
+.ant-menu-item:hover,
+.ant-menu-submenu-title:hover {
+  background-color: rgba(170, 36, 120, 0.2) !important;
+  color: var(--color-primary) !important;
+}
+
+.ant-menu-item-active,
+.ant-menu-submenu-active {
+  color: var(--color-primary) !important;
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.hover\:text-primary:hover {
+  color: var(--color-primary);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.hover\:bg-primary-hover:hover {
+  background-color: var(--color-primary-hover);
+}
