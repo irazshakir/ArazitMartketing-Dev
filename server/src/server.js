@@ -1,10 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
-import { supabase } from './config/supabase.js';
 
 // Load environment variables
 dotenv.config();
