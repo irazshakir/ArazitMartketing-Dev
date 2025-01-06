@@ -11,68 +11,98 @@ import {
   MenuUnfoldOutlined
 } from '@ant-design/icons';
 import Logo from './Logo';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import theme from '../../theme';
 import UserProfile from './UserProfile';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { supabase } from '../../lib/supabaseClient';
 
 const { Sider } = Layout;
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const location = useLocation();
 
-  const menuItems = [
+  useEffect(() => {
+    getUserRole();
+  }, []);
+
+  const getUserRole = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*, roles(*)')
+        .eq('email', session.user.email)
+        .single();
+      
+      setUserRole(userData?.roles?.role_name);
+    }
+  };
+
+  const commonMenuItems = [
     { 
-      key: '/', 
+      key: 'home',
       icon: <HomeOutlined />, 
-      label: 'Home',
-      path: '/'
+      label: 'Dashboard',
+      path: role => `/${role}/dashboard`
     },
     { 
-      key: 'conversations', 
-      icon: <MessageOutlined />, 
-      label: 'Conversations',
-      path: '/conversations'
-    },
-    { 
-      key: 'leads', 
+      key: 'leads',
       icon: <UserOutlined />, 
       label: 'Leads',
-      path: '/leads'
+      path: role => `/${role}/leads`
     },
     { 
-      key: 'analytics', 
+      key: 'conversations',
+      icon: <MessageOutlined />, 
+      label: 'Conversations',
+      path: role => `/${role}/conversations`
+    },
+    { 
+      key: 'analytics',
       icon: <BarChartOutlined />, 
       label: 'Analytics',
-      children: [
-        { key: 'reports', label: 'Reports', path: '/reports' },
-        { key: 'logs', label: 'Logs', path: '/logs' }
-      ]
+      path: role => `/${role}/analytics`
     },
+  ];
+
+  const adminSpecificItems = [
     { 
-      key: 'invoices', 
-      icon: <FileTextOutlined />, 
-      label: 'Invoices',
-      path: '/invoices'
-    },
-    { 
-      key: 'users', 
+      key: '/admin/users', 
       icon: <TeamOutlined />, 
-      label: 'Users',
-      path: '/users'
+      label: 'User Management',
+      path: '/admin/users'
     },
     { 
       key: 'settings', 
       icon: <SettingOutlined />, 
       label: 'Settings',
       children: [
-        { key: 'company', label: 'Company', path: '/settings/company' },
-        { key: 'accounts', label: 'Accounts', path: '/settings/accounts' },
-        { key: 'readyMadePackages', label: 'Ready Made Packages', path: '/settings/packages' },
-        { key: 'hotelRates', label: 'Hotel Rates', path: '/settings/hotel-rates' }
+        { key: '/admin/settings/company', label: 'Company', path: '/admin/settings/company' },
+        { key: '/admin/settings/packages', label: 'Packages', path: '/admin/settings/packages' },
+        { key: '/admin/settings/rates', label: 'Rates', path: '/admin/settings/rates' }
       ]
     },
   ];
+
+  const getMenuItems = () => {
+    let baseItems = commonMenuItems.map(item => ({
+      ...item,
+      key: item.path(userRole || 'user'),
+      path: item.path(userRole || 'user')
+    }));
+
+    switch (userRole) {
+      case 'admin':
+        return [...baseItems, ...adminSpecificItems];
+      case 'manager':
+        return baseItems;
+      default: // user role
+        return baseItems;
+    }
+  };
 
   return (
     <Sider
@@ -96,7 +126,8 @@ const Sidebar = () => {
       </div>
       <Menu
         mode="inline"
-        items={menuItems.map(item => ({
+        selectedKeys={[location.pathname]}
+        items={getMenuItems().map(item => ({
           ...item,
           label: item.path ? (
             <NavLink 

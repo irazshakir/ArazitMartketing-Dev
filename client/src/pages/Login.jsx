@@ -3,17 +3,40 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import theme from '../theme';
 import ArazitLogo from '../assets/Arazit.svg';
+import { authService } from '../services/authService';
+import { message } from 'antd';
+import { useState } from 'react';
 
 const { Title, Text } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  const onFinish = (values) => {
-    console.log('Success:', values);
-    // Add your login logic here
-    navigate('/users');
+  const onFinish = async (values) => {
+    try {
+      setLoading(true);
+      const { userData } = await authService.signIn(values);
+      
+      // Route based on user role
+      switch (userData.roles.role_name) {
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'manager':
+          navigate('/manager/dashboard');
+          break;
+        default:
+          navigate('/dashboard');
+      }
+      
+      message.success('Successfully logged in!');
+    } catch (error) {
+      message.error(error.message || 'Failed to login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,6 +114,7 @@ const Login = () => {
               htmlType="submit"
               size="large"
               block
+              loading={loading}
               style={{ 
                 backgroundColor: theme.colors.primary,
                 borderColor: theme.colors.primary,
