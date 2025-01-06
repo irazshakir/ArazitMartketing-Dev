@@ -1,40 +1,35 @@
 import { Dropdown } from 'antd';
 import { MoreOutlined } from '@ant-design/icons';
-import theme from '../../theme';
 import UserProfileDropdown from './UserProfileDropdown';
+import theme from '../../theme';
 
 const UserProfile = ({ collapsed }) => {
   return (
-    <div className="border-t border-gray-100">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center min-w-0">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-sm font-medium text-blue-600">I</span>
+    <Dropdown 
+      overlay={<UserProfileDropdown />} 
+      trigger={['click']}
+      placement="topRight"
+    >
+      <div className="p-4 border-t border-gray-100 cursor-pointer hover:bg-gray-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+            <span className="text-sm font-medium text-pink-600">I</span>
           </div>
           {!collapsed && (
-            <div className="ml-3 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">INDEGO...</p>
-              <p className="text-xs text-gray-500 truncate">Inzmam</p>
-            </div>
+            <>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium truncate">Inzmam</h4>
+                <p className="text-xs text-gray-500 truncate">Admin</p>
+              </div>
+              <MoreOutlined 
+                className="text-lg" 
+                style={{ color: theme.colors.primary }}
+              />
+            </>
           )}
         </div>
-        {!collapsed && (
-          <Dropdown 
-            dropdownRender={() => <UserProfileDropdown />}
-            placement="topRight" 
-            trigger={['click']}
-            overlayStyle={{ minWidth: '320px' }}
-          >
-            <button
-              className="p-1 rounded hover:bg-gray-100"
-              style={{ color: theme.colors.primary }}
-            >
-              <MoreOutlined style={{ fontSize: '20px' }} />
-            </button>
-          </Dropdown>
-        )}
       </div>
-    </div>
+    </Dropdown>
   );
 };
 

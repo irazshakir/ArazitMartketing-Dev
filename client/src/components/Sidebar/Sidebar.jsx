@@ -14,6 +14,7 @@ import Logo from './Logo';
 import { useState } from 'react';
 import theme from '../../theme';
 import UserProfile from './UserProfile';
+import { NavLink } from 'react-router-dom';
 
 const { Sider } = Layout;
 
@@ -22,48 +23,53 @@ const Sidebar = () => {
 
   const menuItems = [
     { 
-      key: 'home', 
+      key: '/', 
       icon: <HomeOutlined />, 
-      label: 'Home' 
+      label: 'Home',
+      path: '/'
     },
     { 
       key: 'conversations', 
       icon: <MessageOutlined />, 
-      label: 'Conversations' 
+      label: 'Conversations',
+      path: '/conversations'
     },
     { 
       key: 'leads', 
       icon: <UserOutlined />, 
-      label: 'Leads' 
+      label: 'Leads',
+      path: '/leads'
     },
     { 
       key: 'analytics', 
       icon: <BarChartOutlined />, 
       label: 'Analytics',
       children: [
-        { key: 'reports', label: 'Reports' },
-        { key: 'logs', label: 'Logs' }
+        { key: 'reports', label: 'Reports', path: '/reports' },
+        { key: 'logs', label: 'Logs', path: '/logs' }
       ]
     },
     { 
       key: 'invoices', 
       icon: <FileTextOutlined />, 
-      label: 'Invoices' 
+      label: 'Invoices',
+      path: '/invoices'
     },
     { 
-      key: 'accounts', 
+      key: 'users', 
       icon: <TeamOutlined />, 
-      label: 'Accounts' 
+      label: 'Users',
+      path: '/users'
     },
     { 
       key: 'settings', 
       icon: <SettingOutlined />, 
       label: 'Settings',
       children: [
-        { key: 'company', label: 'Company' },
-        { key: 'accounts', label: 'Accounts' },
-        { key: 'readyMadePackages', label: 'Ready Made Packages' },
-        { key: 'hotelRates', label: 'Hotel Rates' }
+        { key: 'company', label: 'Company', path: '/settings/company' },
+        { key: 'accounts', label: 'Accounts', path: '/settings/accounts' },
+        { key: 'readyMadePackages', label: 'Ready Made Packages', path: '/settings/packages' },
+        { key: 'hotelRates', label: 'Hotel Rates', path: '/settings/hotel-rates' }
       ]
     },
   ];
@@ -90,22 +96,32 @@ const Sidebar = () => {
       </div>
       <Menu
         mode="inline"
-        items={menuItems}
+        items={menuItems.map(item => ({
+          ...item,
+          label: item.path ? (
+            <NavLink 
+              to={item.path}
+              className={({ isActive }) => isActive ? 'text-primary' : ''}
+            >
+              {item.label}
+            </NavLink>
+          ) : item.label,
+          ...(item.children && {
+            children: item.children.map(child => ({
+              ...child,
+              label: child.path ? (
+                <NavLink 
+                  to={child.path}
+                  className={({ isActive }) => isActive ? 'text-primary' : ''}
+                >
+                  {child.label}
+                </NavLink>
+              ) : child.label
+            }))
+          })
+        }))}
         className="border-r-0"
         inlineCollapsed={collapsed}
-        style={{
-          '.ant-menu-item-selected': {
-            backgroundColor: theme.colors.primaryActive,
-            color: theme.colors.primary,
-          },
-          '.ant-menu-item:hover, .ant-menu-submenu-title:hover': {
-            backgroundColor: theme.colors.primaryHover + ' !important',
-            color: theme.colors.primary,
-          },
-          '.ant-menu-item-active, .ant-menu-submenu-active': {
-            color: theme.colors.primary,
-          }
-        }}
       />
       <div className="absolute bottom-0 left-0 right-0">
         <div className={`mx-4 mb-4`}>

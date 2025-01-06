@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Switch } from 'antd';
 import {
   UserOutlined,
@@ -59,14 +60,14 @@ const UserProfileDropdown = () => {
           <UserOutlined className="mr-3" />
           <span>Account Details</span>
         </a>
-        <a 
-          href="#" 
-          className="px-4 py-2 flex items-center transition-colors duration-150"
+        <Link 
+          to="/users"
+          className="px-4 py-2 flex items-center transition-colors duration-150 cursor-pointer"
           style={menuItemStyle}
         >
           <TeamOutlined className="mr-3" />
           <span>Users & roles</span>
-        </a>
+        </Link>
       </div>
 
       {/* User Info Section */}
