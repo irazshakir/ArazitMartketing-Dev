@@ -3,64 +3,9 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import theme from '../theme';
 
-const Users = () => {
+function Teams() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const columns = [
-    {
-      title: 'NAME',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-            <span className="text-sm font-medium text-pink-600">
-              {text.charAt(0)}
-            </span>
-          </div>
-          <span>{text}</span>
-        </div>
-      ),
-    },
-    {
-      title: 'EMAIL',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'ROLE',
-      dataIndex: 'role',
-      key: 'role',
-    },
-    {
-      title: 'STATUS',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text) => (
-        <span className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-sm">
-          {text}
-        </span>
-      ),
-    },
-  ];
-
-  const data = [
-    {
-      key: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'Admin',
-      status: 'Active',
-    },
-    {
-      key: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'User',
-      status: 'Active',
-    },
-  ];
 
   const items = [
     {
@@ -113,12 +58,66 @@ const Users = () => {
     }
   };
 
-  // Get active key based on current path
   const getActiveKey = () => {
     const path = location.pathname;
     if (path === '/users') return 'users';
     return path.split('/').pop();
   };
+
+  const columns = [
+    {
+      title: 'TEAM NAME',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-sm font-medium text-blue-600">
+              {text.charAt(0)}
+            </span>
+          </div>
+          <span>{text}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'MEMBERS',
+      dataIndex: 'members',
+      key: 'members',
+    },
+    {
+      title: 'CREATED BY',
+      dataIndex: 'createdBy',
+      key: 'createdBy',
+    },
+    {
+      title: 'STATUS',
+      dataIndex: 'status',
+      key: 'status',
+      render: (text) => (
+        <span className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-sm">
+          {text}
+        </span>
+      ),
+    },
+  ];
+
+  const data = [
+    {
+      key: '1',
+      name: 'Sales Team',
+      members: '5 members',
+      createdBy: 'Admin',
+      status: 'Active',
+    },
+    {
+      key: '2',
+      name: 'Marketing Team',
+      members: '3 members',
+      createdBy: 'Manager',
+      status: 'Active',
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -132,7 +131,7 @@ const Users = () => {
             borderColor: '#aa2478'
           }}
         >
-          Add User
+          Add Team
         </Button>
       </div>
       <Tabs 
@@ -144,6 +143,6 @@ const Users = () => {
       <Table columns={columns} dataSource={data} pagination={false} />
     </div>
   );
-};
+}
 
-export default Users;
+export default Teams;

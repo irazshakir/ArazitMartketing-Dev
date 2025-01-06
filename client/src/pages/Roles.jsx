@@ -3,64 +3,9 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import theme from '../theme';
 
-const Users = () => {
+function Roles() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const columns = [
-    {
-      title: 'NAME',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-            <span className="text-sm font-medium text-pink-600">
-              {text.charAt(0)}
-            </span>
-          </div>
-          <span>{text}</span>
-        </div>
-      ),
-    },
-    {
-      title: 'EMAIL',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'ROLE',
-      dataIndex: 'role',
-      key: 'role',
-    },
-    {
-      title: 'STATUS',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text) => (
-        <span className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-sm">
-          {text}
-        </span>
-      ),
-    },
-  ];
-
-  const data = [
-    {
-      key: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'Admin',
-      status: 'Active',
-    },
-    {
-      key: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'User',
-      status: 'Active',
-    },
-  ];
 
   const items = [
     {
@@ -113,12 +58,73 @@ const Users = () => {
     }
   };
 
-  // Get active key based on current path
   const getActiveKey = () => {
     const path = location.pathname;
     if (path === '/users') return 'users';
     return path.split('/').pop();
   };
+
+  const columns = [
+    {
+      title: 'ROLE NAME',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+            <span className="text-sm font-medium text-purple-600">
+              {text.charAt(0)}
+            </span>
+          </div>
+          <span>{text}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'DESCRIPTION',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
+      title: 'MEMBERS',
+      dataIndex: 'members',
+      key: 'members',
+    },
+    {
+      title: 'STATUS',
+      dataIndex: 'status',
+      key: 'status',
+      render: (text) => (
+        <span className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-sm">
+          {text}
+        </span>
+      ),
+    },
+  ];
+
+  const data = [
+    {
+      key: '1',
+      name: 'Admin',
+      description: 'Full system access',
+      members: '2 members',
+      status: 'Active',
+    },
+    {
+      key: '2',
+      name: 'Editor',
+      description: 'Content management access',
+      members: '4 members',
+      status: 'Active',
+    },
+    {
+      key: '3',
+      name: 'Viewer',
+      description: 'Read-only access',
+      members: '8 members',
+      status: 'Active',
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -132,7 +138,7 @@ const Users = () => {
             borderColor: '#aa2478'
           }}
         >
-          Add User
+          Add Role
         </Button>
       </div>
       <Tabs 
@@ -144,6 +150,6 @@ const Users = () => {
       <Table columns={columns} dataSource={data} pagination={false} />
     </div>
   );
-};
+}
 
-export default Users;
+export default Roles;

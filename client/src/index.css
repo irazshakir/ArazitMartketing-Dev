@@ -8,6 +8,18 @@
   --color-primary-active: rgba(170, 36, 121, 0.664);
 }
 
+.custom-tabs .ant-tabs-tab:hover {
+  color: #aa2478 !important;
+}
+
+.custom-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #aa2478 !important;
+}
+
+.custom-tabs .ant-tabs-ink-bar {
+  background-color: #aa2478 !important;
+}
+
 .ant-menu-item-selected {
   background-color: var(--color-primary-active) !important;
   color: var(--color-primary) !important;
