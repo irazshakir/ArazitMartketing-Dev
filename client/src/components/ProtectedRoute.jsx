@@ -10,9 +10,27 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   useEffect(() => {
     checkUser();
-    const { data: authListener } = supabase.auth.onAuthStateChange(checkUser);
+    
+    // Correct way to handle Supabase auth subscription
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*, roles(*)')
+          .eq('email', session.user.email)
+          .single();
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
     return () => {
-      authListener?.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -51,7 +69,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.roles.role_name)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.roles?.role_name)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

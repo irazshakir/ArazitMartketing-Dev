@@ -1,14 +1,21 @@
 import { Layout, Menu } from 'antd';
 import {
   HomeOutlined,
-  MessageOutlined,
   UserOutlined,
+  MessageOutlined,
   BarChartOutlined,
   FileTextOutlined,
-  TeamOutlined,
+  BankOutlined,
   SettingOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  PieChartOutlined,
+  HistoryOutlined,
+  DollarOutlined,
+  TeamOutlined,
+  BranchesOutlined,
+  HomeOutlined as HotelOutlined,
+  GiftOutlined
 } from '@ant-design/icons';
 import Logo from './Logo';
 import { useState, useEffect } from 'react';
@@ -41,66 +48,104 @@ const Sidebar = () => {
     }
   };
 
-  const commonMenuItems = [
+  const adminMenuItems = [
     { 
-      key: 'home',
+      key: '/admin/dashboard',
       icon: <HomeOutlined />, 
       label: 'Dashboard',
-      path: role => `/${role}/dashboard`
+      path: '/admin/dashboard'
     },
     { 
-      key: 'leads',
+      key: '/admin/leads',
       icon: <UserOutlined />, 
       label: 'Leads',
-      path: role => `/${role}/leads`
+      path: '/admin/leads'
     },
     { 
-      key: 'conversations',
+      key: '/admin/conversations',
       icon: <MessageOutlined />, 
       label: 'Conversations',
-      path: role => `/${role}/conversations`
+      path: '/admin/conversations'
     },
     { 
-      key: 'analytics',
+      key: 'analytics', 
       icon: <BarChartOutlined />, 
       label: 'Analytics',
-      path: role => `/${role}/analytics`
+      children: [
+        { 
+          key: '/admin/analytics/reports', 
+          icon: <PieChartOutlined />,
+          label: 'Reports',
+          path: '/admin/analytics/reports' 
+        },
+        { 
+          key: '/admin/analytics/logs', 
+          icon: <HistoryOutlined />,
+          label: 'Logs',
+          path: '/admin/analytics/logs' 
+        }
+      ]
     },
-  ];
-
-  const adminSpecificItems = [
     { 
-      key: '/admin/users', 
-      icon: <TeamOutlined />, 
-      label: 'User Management',
-      path: '/admin/users'
+      key: '/admin/invoices',
+      icon: <FileTextOutlined />, 
+      label: 'Invoices',
+      path: '/admin/invoices'
+    },
+    { 
+      key: '/admin/accounts',
+      icon: <BankOutlined />, 
+      label: 'Accounts',
+      path: '/admin/accounts'
     },
     { 
       key: 'settings', 
       icon: <SettingOutlined />, 
       label: 'Settings',
       children: [
-        { key: '/admin/settings/company', label: 'Company', path: '/admin/settings/company' },
-        { key: '/admin/settings/packages', label: 'Packages', path: '/admin/settings/packages' },
-        { key: '/admin/settings/rates', label: 'Rates', path: '/admin/settings/rates' }
+        { 
+          key: '/admin/settings/general', 
+          label: 'General',
+          path: '/admin/settings/general' 
+        },
+        { 
+          key: '/admin/settings/accounts', 
+          icon: <DollarOutlined />,
+          label: 'Accounts',
+          path: '/admin/settings/accounts' 
+        },
+        { 
+          key: '/admin/settings/branches', 
+          icon: <BranchesOutlined />,
+          label: 'Branches',
+          path: '/admin/settings/branches' 
+        },
+        { 
+          key: '/admin/settings/hotel-rates', 
+          icon: <HotelOutlined />,
+          label: 'Hotel Rates',
+          path: '/admin/settings/hotel-rates' 
+        },
+        { 
+          key: '/admin/settings/packages', 
+          icon: <GiftOutlined />,
+          label: 'Readymade Packages',
+          path: '/admin/settings/packages' 
+        }
       ]
     },
   ];
 
   const getMenuItems = () => {
-    let baseItems = commonMenuItems.map(item => ({
-      ...item,
-      key: item.path(userRole || 'user'),
-      path: item.path(userRole || 'user')
-    }));
-
     switch (userRole) {
       case 'admin':
-        return [...baseItems, ...adminSpecificItems];
+        return adminMenuItems;
       case 'manager':
-        return baseItems;
-      default: // user role
-        return baseItems;
+        // Add manager menu items when needed
+        return [];
+      default:
+        // Add user menu items when needed
+        return [];
     }
   };
 
@@ -155,16 +200,6 @@ const Sidebar = () => {
         inlineCollapsed={collapsed}
       />
       <div className="absolute bottom-0 left-0 right-0">
-        <div className={`mx-4 mb-4`}>
-          <div 
-            className={`flex items-center text-gray-400 text-sm p-2 rounded ${collapsed ? 'justify-center' : ''}`}
-            style={{ backgroundColor: '#f5f5f5' }}
-          >
-            {!collapsed && <span>Quick Search</span>}
-            {!collapsed && <span className="ml-auto">Ctrl + K</span>}
-            {collapsed && <span>⌘K</span>}
-          </div>
-        </div>
         <UserProfile collapsed={collapsed} />
       </div>
     </Sider>

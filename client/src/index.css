@@ -4,8 +4,8 @@
 
 :root {
   --color-primary: #aa2478;
-  --color-primary-hover: rgba(170, 36, 121, 0.61);
-  --color-primary-active: rgba(170, 36, 121, 0.664);
+  --color-primary-hover: rgba(170, 36, 121, 0.200);
+  --color-primary-active: rgba(170, 36, 121, 0.200);
 }
 
 .custom-tabs .ant-tabs-tab:hover {
