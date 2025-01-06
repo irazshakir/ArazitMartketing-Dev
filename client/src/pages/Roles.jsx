@@ -2,6 +2,7 @@ import { Table, Tabs, Button } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import theme from '../theme';
+import ActionDropdown from '../components/ActionDropdown';
 
 function Roles() {
   const navigate = useNavigate();
@@ -98,6 +99,17 @@ function Roles() {
         <span className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-sm">
           {text}
         </span>
+      ),
+    },
+    {
+      title: 'ACTIONS',
+      key: 'actions',
+      width: 80,
+      render: (_, record) => (
+        <ActionDropdown 
+          onEdit={() => handleEdit(record)}
+          onDelete={() => handleDelete(record)}
+        />
       ),
     },
   ];

@@ -2,6 +2,7 @@ import { Table, Tabs, Button } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import theme from '../theme';
+import ActionDropdown from '../components/ActionDropdown';
 
 const InactiveUsers = () => {
   const navigate = useNavigate();
@@ -98,6 +99,17 @@ const InactiveUsers = () => {
         <span className="px-2 py-1 rounded-full bg-red-50 text-red-600 text-sm">
           {text}
         </span>
+      ),
+    },
+    {
+      title: 'ACTIONS',
+      key: 'actions',
+      width: 80,
+      render: (_, record) => (
+        <ActionDropdown 
+          onEdit={() => handleEdit(record)}
+          onDelete={() => handleDelete(record)}
+        />
       ),
     },
   ];
