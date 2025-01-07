@@ -1,10 +1,10 @@
 import { Table, Tabs, Button } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import theme from '../theme';
-import ActionDropdown from '../components/ActionDropdown';
+import theme from '../../theme';
+import ActionDropdown from '../../components/ActionDropdown';
 
-const InactiveUsers = () => {
+const Invites = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,22 +41,22 @@ const InactiveUsers = () => {
 
   const handleTabChange = (key) => {
     switch(key) {
-      case 'users':
-        navigate('/users');
-        break;
-      case 'invites':
-        navigate('/users/invites');
-        break;
-      case 'inactive':
-        navigate('/users/inactive');
-        break;
-      case 'teams':
-        navigate('/users/teams');
-        break;
-      case 'roles':
-        navigate('/users/roles');
-        break;
-    }
+        case 'users':
+          navigate('/admin/users');
+          break;
+        case 'invites':
+          navigate('/admin/users/invites');
+          break;
+        case 'inactive':
+          navigate('/admin/users/inactive');
+          break;
+        case 'teams':
+          navigate('/admin/users/teams');
+          break;
+        case 'roles':
+          navigate('/admin/users/roles');
+          break;
+      }
   };
 
   const getActiveKey = () => {
@@ -96,7 +96,7 @@ const InactiveUsers = () => {
       dataIndex: 'status',
       key: 'status',
       render: (text) => (
-        <span className="px-2 py-1 rounded-full bg-red-50 text-red-600 text-sm">
+        <span className="px-2 py-1 rounded-full bg-yellow-50 text-yellow-600 text-sm">
           {text}
         </span>
       ),
@@ -117,17 +117,10 @@ const InactiveUsers = () => {
   const data = [
     {
       key: '1',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
+      name: 'John Doe',
+      email: 'john@example.com',
       role: 'User',
-      status: 'Inactive',
-    },
-    {
-      key: '2',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      role: 'Editor',
-      status: 'Inactive',
+      status: 'Pending',
     },
   ];
 
@@ -147,4 +140,4 @@ const InactiveUsers = () => {
   );
 };
 
-export default InactiveUsers;
+export default Invites;

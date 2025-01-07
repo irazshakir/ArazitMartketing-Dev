@@ -61,7 +61,7 @@ const UserProfileDropdown = () => {
           <span>Account Details</span>
         </a>
         <Link 
-          to="/users"
+          to="/admin/users"
           className="px-4 py-2 flex items-center transition-colors duration-150 cursor-pointer"
           style={menuItemStyle}
         >
