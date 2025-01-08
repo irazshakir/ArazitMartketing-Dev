@@ -1,5 +1,7 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -14,6 +16,9 @@ router.post('/create-user', async (req, res) => {
       user_is_active = true,
       email_verified = false
     } = req.body;
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Validate required fields
     if (!email || !password || !name || !role_id) {
@@ -40,6 +45,7 @@ router.post('/create-user', async (req, res) => {
         {
           name,
           email,
+          password: hashedPassword,
           role_id,
           user_is_active,
           email_verified,
@@ -121,13 +127,8 @@ router.post('/signup', async (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) throw authError;
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip;
 
     // Get user data including role
     const { data: userData, error: userError } = await supabase
@@ -136,19 +137,52 @@ router.post('/signin', async (req, res) => {
       .eq('email', email)
       .single();
 
-    if (userError) throw userError;
+    if (userError) throw new Error('User not found');
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, userData.password);
+    if (!isValidPassword) {
+      throw new Error('Invalid credentials');
+    }
 
     // Check if user is active
     if (!userData.user_is_active) {
       throw new Error('Account is inactive');
     }
 
+    // Create JWT token
+    const token = jwt.sign(
+      { userId: userData.id, role: userData.roles.role_name },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Create session
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('sessions')
+      .insert([{
+        user_id: userData.id,
+        token,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        device_info: {
+          ip: ipAddress,
+          userAgent: userAgent
+        }
+      }])
+      .select()
+      .single();
+
+    if (sessionError) throw sessionError;
+
     res.status(200).json({
       status: 'success',
       message: 'Signed in successfully',
       data: {
         user: userData,
-        session: authData.session
+        session: sessionData,
+        token
       },
     });
   } catch (error) {
@@ -213,6 +247,34 @@ router.put('/users/:id', async (req, res) => {
     res.status(400).json({
       status: 'error',
       message: error.message,
+    });
+  }
+});
+
+// Add this route handler
+router.post('/logout', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    // Update session status in database
+    const { error } = await supabase
+      .from('sessions')
+      .update({ 
+        is_active: false,
+        last_activity_at: new Date().toISOString()
+      })
+      .eq('id', sessionId);
+
+    if (error) throw error;
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
     });
   }
 });

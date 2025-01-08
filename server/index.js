@@ -1,20 +1,21 @@
 import express from 'express';
 import cors from 'cors';
-import userRoutes from './routes/users.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import uploadRoutes from './routes/uploadRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
-
-// Routes
-app.use('/api/users', userRoutes);
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/api', uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+app.listen(PORT, () => {});
+
+export default app; 
