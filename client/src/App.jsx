@@ -17,6 +17,11 @@ import InactiveUsers from './pages/Users/InactiveUsers';
 import Teams from './pages/Users/Teams';
 import Roles from './pages/Users/Roles';
 import { supabase } from './lib/supabaseClient';
+import RouteGuard from './components/RouteGuard';
+import GeneralSettings from './pages/Settings/general';
+import Products from './pages/Settings/products';
+import Stages from './pages/Settings/stages';
+import LeadSources from './pages/Settings/LeadSources';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -77,23 +82,31 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={
-        !session ? <Login /> : <Navigate to={`/${userRole}/dashboard`} replace />
-      } />
+      <Route path="/login" element={<Login />} />
       
       {/* Admin Routes */}
       <Route 
         path="/admin" 
         element={
-          <ProtectedRoute allowedRoles={['admin']} session={session} userRole={userRole}>
-            <AdminDashboard />
-          </ProtectedRoute>
+          <RouteGuard>
+            <ProtectedRoute allowedRoles={['admin']} session={session} userRole={userRole}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          </RouteGuard>
         }
       >
         <Route path="dashboard" element={<AdminDashboardContent />} />
         <Route path="leads" element={<Leads />} />
         <Route path="conversations" element={<Conversations />} />
         
+        {/* Add the settings route */}
+        <Route path="settings">
+          <Route path="general" element={<GeneralSettings />} />
+          <Route path="products" element={<Products />} />
+          <Route path="stages" element={<Stages />} />
+          <Route path="lead-sources" element={<LeadSources />} />
+        </Route>
+
         {/* User Management Routes */}
         <Route path="users">
           <Route index element={<Users />} />
@@ -110,9 +123,11 @@ function App() {
       <Route 
         path="/manager" 
         element={
-          <ProtectedRoute allowedRoles={['manager']} session={session} userRole={userRole}>
-            <ManagerDashboard />
-          </ProtectedRoute>
+          <RouteGuard>
+            <ProtectedRoute allowedRoles={['manager']} session={session} userRole={userRole}>
+              <ManagerDashboard />
+            </ProtectedRoute>
+          </RouteGuard>
         }
       >
         <Route path="dashboard" element={<ManagerDashboardContent />} />
@@ -124,9 +139,11 @@ function App() {
       <Route 
         path="/" 
         element={
-          <ProtectedRoute allowedRoles={['user']} session={session} userRole={userRole}>
-            <UserDashboard />
-          </ProtectedRoute>
+          <RouteGuard>
+            <ProtectedRoute allowedRoles={['user']} session={session} userRole={userRole}>
+              <UserDashboard />
+            </ProtectedRoute>
+          </RouteGuard>
         }
       >
         <Route path="dashboard" element={<UserDashboardContent />} />

@@ -5,7 +5,7 @@ import theme from '../theme';
 import ArazitLogo from '../assets/Arazit.svg';
 import { authService } from '../services/authService';
 import { message } from 'antd';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -13,6 +13,39 @@ const Login = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if user is already logged out
+    const session = localStorage.getItem('session');
+    if (!session) {
+      // Already logged out, stay on login page
+      return;
+    }
+
+    // If session exists, verify it
+    const checkSession = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser) {
+          // Session is valid, redirect to appropriate dashboard
+          switch (currentUser.userData.roles.role_name) {
+            case 'admin':
+              navigate('/admin/dashboard');
+              break;
+            case 'manager':
+              navigate('/manager/dashboard');
+              break;
+            default:
+              navigate('/dashboard');
+          }
+        }
+      } catch (error) {
+        console.error('Session verification failed:', error);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const onFinish = async (values) => {
     try {

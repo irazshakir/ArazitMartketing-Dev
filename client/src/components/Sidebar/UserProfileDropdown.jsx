@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Switch } from 'antd';
 import {
   UserOutlined,
@@ -10,8 +10,22 @@ import {
   GlobalOutlined
 } from '@ant-design/icons';
 import theme from '../../theme';
+import { authService } from '../../services/authService';
+import { message } from 'antd';
 
 const UserProfileDropdown = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      message.success('Successfully logged out');
+      navigate('/login');
+    } catch (error) {
+      message.error('Failed to logout');
+    }
+  };
+
   const menuItemStyle = {
     '&:hover': {
         backgroundColor: 'rgba(170, 36, 120, 0.2) !important',
@@ -135,8 +149,8 @@ const UserProfileDropdown = () => {
           <span>Profile</span>
         </a>
         <a 
-          href="#" 
-          className="px-4 py-2 flex items-center text-red-500 transition-colors duration-150"
+          onClick={handleLogout}
+          className="px-4 py-2 flex items-center text-red-500 transition-colors duration-150 cursor-pointer"
           style={logoutStyle}
         >
           <LogoutOutlined className="mr-3" />

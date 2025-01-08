@@ -105,6 +105,7 @@ const Sidebar = () => {
       children: [
         { 
           key: '/admin/settings/general', 
+          icon: <SettingOutlined />,
           label: 'General',
           path: '/admin/settings/general' 
         },

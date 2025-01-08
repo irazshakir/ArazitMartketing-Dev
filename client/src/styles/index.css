@@ -1,0 +1,28 @@
+/* Custom table styles */
+.settings-table .ant-table-thead > tr > th {
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #f9fafb;
+  padding: 16px;
+}
+
+.settings-table .ant-table-tbody > tr > td {
+  padding: 16px;
+  vertical-align: middle;
+}
+
+.settings-table .ant-table-tbody > tr:hover > td {
+  background: #f9fafb;
+}
+
+/* Pagination styles */
+.settings-table .ant-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.settings-table .ant-table-pagination-right {
+  justify-content: flex-end;
+} 
