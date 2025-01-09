@@ -22,6 +22,7 @@ import GeneralSettings from './pages/Settings/general';
 import Products from './pages/Settings/products';
 import Stages from './pages/Settings/stages';
 import LeadSources from './pages/Settings/LeadSources';
+import LeadEdit from './pages/Leads/Edit';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -97,6 +98,7 @@ function App() {
       >
         <Route path="dashboard" element={<AdminDashboardContent />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="leads/:id" element={<LeadEdit />} />
         <Route path="conversations" element={<Conversations />} />
         
         {/* Add the settings route */}
@@ -132,6 +134,7 @@ function App() {
       >
         <Route path="dashboard" element={<ManagerDashboardContent />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="leads/:id" element={<LeadEdit />} />
         <Route path="conversations" element={<Conversations />} />
       </Route>
 
@@ -148,6 +151,7 @@ function App() {
       >
         <Route path="dashboard" element={<UserDashboardContent />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="leads/:id" element={<LeadEdit />} />
         <Route path="conversations" element={<Conversations />} />
       </Route>
 

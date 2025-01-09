@@ -22,6 +22,8 @@ import {
 } from '@ant-design/icons';
 import theme from '../../theme';
 import axios from 'axios';
+import TableSkeleton from '../../components/TableSkeleton';
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -33,6 +35,8 @@ const Leads = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingLead, setEditingLead] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   
   // State for dropdown data
   const [products, setProducts] = useState([]);
@@ -66,11 +70,14 @@ const Leads = () => {
 
   // Fetch leads
   const fetchLeads = async () => {
+    setLoading(true);
     try {
       const response = await axios.get('/api/leads');
       setLeads(response.data);
     } catch (error) {
       message.error('Failed to fetch leads');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -173,6 +180,24 @@ const Leads = () => {
       key: 'stage',
     },
     {
+      title: 'Assigned To',
+      dataIndex: ['users', 'name'],
+      key: 'assigned_user',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'lead_active_status',
+      key: 'status',
+      render: (status) => (
+        <span style={{ 
+          color: status ? '#52c41a' : '#ff4d4f',
+          fontWeight: '500'
+        }}>
+          {status ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
       title: 'Followup Date',
       dataIndex: 'fu_date',
       key: 'followup',
@@ -186,8 +211,11 @@ const Leads = () => {
         <Dropdown
           overlay={
             <Menu>
-              <Menu.Item key="edit" onClick={() => handleEdit(record)}>
-                Edit
+              <Menu.Item 
+                key="view" 
+                onClick={() => navigate(`/admin/leads/${record.id}`)}
+              >
+                View & Edit
               </Menu.Item>
               <Menu.Item 
                 key="delete" 
@@ -251,21 +279,25 @@ const Leads = () => {
 
       {/* Table Section */}
       <div style={{ padding: '24px' }}>
-        <Table
-          columns={columns}
-          dataSource={leads}
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          rowKey="id"
-          pagination={{
-            total: leads.length,
-            showTotal: (total) => `Total ${total} items`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
-        />
+        {loading ? (
+          <TableSkeleton />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={leads}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: setSelectedRowKeys,
+            }}
+            rowKey="id"
+            pagination={{
+              total: leads.length,
+              showTotal: (total) => `Total ${total} items`,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+          />
+        )}
       </div>
 
       {/* Add/Edit Lead Modal */}
