@@ -66,4 +66,35 @@
 
 .urlText:hover {
   text-decoration: underline;
+}
+
+.input {
+  margin-top: 4px;
+}
+
+.dateTimeContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.datePicker {
+  flex: 1;
+}
+
+.timePicker {
+  width: 120px;
+}
+
+.select {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.statusToggle {
+  margin-top: 8px;
+}
+
+.updateButton {
+  margin-top: 16px;
 } 
