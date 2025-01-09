@@ -6,6 +6,9 @@ import ChatBox from '../../components/ChatBox/ChatBox';
 import ChatInfo from '../../components/ChatInfo/ChatInfo';
 import axios from 'axios';
 
+// Add this line to set base URL
+axios.defaults.baseURL = 'http://localhost:5000';
+
 const { Content, Sider } = Layout;
 const { Title } = Typography;
 
@@ -14,7 +17,7 @@ const LeadEdit = () => {
   const navigate = useNavigate();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [assignedUser, setAssignedUser] = useState(lead?.assigned_user || null);
+  const [assignedUser, setAssignedUser] = useState(null);
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -22,6 +25,7 @@ const LeadEdit = () => {
       try {
         const response = await axios.get(`/api/leads/${id}`);
         setLead(response.data);
+        setAssignedUser(response.data?.assigned_user);
       } catch (error) {
         message.error('Failed to fetch lead details');
       } finally {
@@ -47,12 +51,10 @@ const LeadEdit = () => {
 
   const handleSendMessage = (message) => {
     // Handle WhatsApp message sending
-    console.log('Sending message:', message);
   };
 
   const handleAddNote = (note) => {
     // Handle internal note adding
-    console.log('Adding note:', note);
   };
 
   const handleAddTag = () => {
@@ -65,7 +67,7 @@ const LeadEdit = () => {
 
   const handleAssigneeChange = async (userId) => {
     try {
-      await axios.patch(`/api/leads/${id}/assign`, { assigned_user: userId });
+      await axios.patch(`/api/leads/assign/${id}`, { assigned_user: userId });
       setAssignedUser(userId);
       message.success('Lead assigned successfully');
     } catch (error) {
@@ -128,6 +130,7 @@ const LeadEdit = () => {
             onAddNote={handleAddNote}
             currentAssignee={assignedUser}
             onAssigneeChange={handleAssigneeChange}
+            id={id}
           />
         </Content>
         
@@ -141,17 +144,20 @@ const LeadEdit = () => {
         >
           <ChatInfo
             contact={{
+              id: lead?.id,
               name: lead?.name,
               phone: lead?.phone,
               email: lead?.email,
               whatsapp: true,
-              marketingOptIn: 'Yes',
-              source: lead?.lead_sources?.lead_source_name,
-              sourceId: lead?.id,
-              // Add other relevant lead data here
+              lead_product: lead?.lead_product,
+              lead_stage: lead?.lead_stage,
+              lead_source_id: lead?.lead_source_id,
+              fu_date: lead?.fu_date,
+              fu_hour: lead?.fu_hour,
+              fu_minutes: lead?.fu_minutes,
+              fu_period: lead?.fu_period,
+              lead_active_status: lead?.lead_active_status
             }}
-            onAddTag={handleAddTag}
-            onLinkCompany={handleLinkCompany}
           />
         </Sider>
       </Layout>

@@ -25,7 +25,8 @@ const ChatBox = ({
   onAddNote, 
   placeholder = "Type a message...",
   currentAssignee = null,
-  onAssigneeChange 
+  onAssigneeChange,
+  id
 }) => {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('reply');
@@ -49,6 +50,13 @@ const ChatBox = ({
     fetchUsers();
   }, []);
 
+  // Get assigned user name
+  const getAssignedUserName = () => {
+    if (!currentAssignee) return 'Admin';
+    const assignedUser = users.find(user => user.id === currentAssignee);
+    return assignedUser?.name || 'Admin';
+  };
+
   const handleSend = () => {
     if (message.trim()) {
       if (activeTab === 'reply') {
@@ -67,16 +75,44 @@ const ChatBox = ({
     }
   };
 
+  // Add user assignment handler
+  const handleAssignUser = async (userId) => {
+    try {
+      await axios.patch(`/api/leads/assign/${id}`, {
+        assigned_user: userId
+      });
+      onAssigneeChange(userId);
+      message.success('Lead assigned successfully');
+    } catch (error) {
+      message.error('Failed to assign lead');
+    }
+  };
+
   return (
     <div className={styles.chatBoxContainer}>
-      {/* Assignment Note - Always show with default text */}
-      <Alert
-        message="This conversation is assigned to Admin"
-        type="warning"
-        showIcon
-        className={styles.assignmentAlert}
-      />
-
+      <div className={styles.assignmentSection}>
+        <Alert
+          message={`This conversation is assigned to ${getAssignedUserName()}`}
+          type="warning"
+          showIcon
+          className={styles.assignmentAlert}
+          action={
+            <Select
+              placeholder="Reassign to"
+              onChange={handleAssignUser}
+              value={currentAssignee}
+              style={{ width: 120 }}
+              loading={loading}
+            >
+              {users.map(user => (
+                <Option key={user.id} value={user.id}>
+                  {user.name}
+                </Option>
+              ))}
+            </Select>
+          }
+        />
+      </div>
       {/* Message Display Area */}
       <div className={styles.messagesContainer}>
         {/* Messages will be rendered here */}

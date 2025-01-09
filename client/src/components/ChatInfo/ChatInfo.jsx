@@ -15,7 +15,33 @@ const ChatInfo = ({
   const [products, setProducts] = useState([]);
   const [stages, setStages] = useState([]);
   const [leadSources, setLeadSources] = useState([]);
-  const [isActive, setIsActive] = useState(contact.lead_is_active);
+  const [isActive, setIsActive] = useState(contact.lead_active_status);
+  const [formData, setFormData] = useState({
+    phone: contact.phone,
+    email: contact.email,
+    productId: contact.lead_product,
+    stageId: contact.lead_stage,
+    leadSourceId: contact.lead_source_id,
+    followDate: contact.fu_date,
+    followHour: contact.fu_hour,
+    followMinutes: contact.fu_minutes,
+    followPeriod: contact.fu_period
+  });
+
+  useEffect(() => {
+    setFormData({
+      phone: contact.phone,
+      email: contact.email,
+      productId: contact.lead_product,
+      stageId: contact.lead_stage,
+      leadSourceId: contact.lead_source_id,
+      followDate: contact.fu_date,
+      followHour: contact.fu_hour,
+      followMinutes: contact.fu_minutes,
+      followPeriod: contact.fu_period
+    });
+    setIsActive(contact.lead_active_status);
+  }, [contact]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,19 +66,63 @@ const ChatInfo = ({
   const handleUpdate = async () => {
     try {
       await axios.patch(`/api/leads/${contact.id}`, {
-        phone: contact.phone,
-        email: contact.email,
-        follow_date: contact.followDate,
-        follow_time: contact.followTime,
-        product_id: contact.productId,
-        stage_id: contact.stageId,
-        lead_source_id: contact.leadSourceId,
-        lead_is_active: isActive
+        phone: formData.phone,
+        email: formData.email,
+        lead_product: formData.productId,
+        lead_stage: formData.stageId,
+        lead_source_id: formData.leadSourceId,
+        fu_date: formData.followDate,
+        fu_hour: formData.followHour,
+        fu_minutes: formData.followMinutes,
+        fu_period: formData.followPeriod,
+        lead_active_status: isActive
       });
       message.success('Lead updated successfully');
     } catch (error) {
       message.error('Failed to update lead');
     }
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTimeChange = (time) => {
+    if (time) {
+      const hour = time.format('hh');
+      const minutes = time.format('mm');
+      const period = time.format('A');
+
+      setFormData(prev => ({
+        ...prev,
+        followHour: hour,
+        followMinutes: minutes,
+        followPeriod: period
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        followHour: null,
+        followMinutes: null,
+        followPeriod: null
+      }));
+    }
+  };
+
+  const getTimeValue = () => {
+    if (formData.followHour && formData.followMinutes !== undefined) {
+      // Convert numeric hour to string with leading zero if needed
+      const hour = String(formData.followHour).padStart(2, '0');
+      // Convert numeric minutes to string with leading zero if needed
+      const minutes = String(formData.followMinutes).padStart(2, '0');
+      const period = formData.followPeriod || 'AM';
+
+      return dayjs(`${hour}:${minutes} ${period}`, 'hh:mm A');
+    }
+    return null;
   };
 
   return (
@@ -70,7 +140,8 @@ const ChatInfo = ({
       <div className={styles.infoSection}>
         <Text type="secondary">Phone Number</Text>
         <Input 
-          value={contact.phone}
+          value={formData.phone}
+          onChange={(e) => handleInputChange('phone', e.target.value)}
           placeholder="Enter phone number"
           className={styles.input}
         />
@@ -80,7 +151,8 @@ const ChatInfo = ({
       <div className={styles.infoSection}>
         <Text type="secondary">Email</Text>
         <Input 
-          value={contact.email}
+          value={formData.email}
+          onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="Enter email"
           className={styles.input}
         />
@@ -93,13 +165,15 @@ const ChatInfo = ({
           <DatePicker 
             className={styles.datePicker}
             format="DD/MM/YYYY"
-            value={contact.followDate ? dayjs(contact.followDate) : null}
+            value={formData.followDate ? dayjs(formData.followDate) : null}
+            onChange={(date) => handleInputChange('followDate', date)}
           />
           <TimePicker 
             className={styles.timePicker}
             format="hh:mm A"
             use12Hours
-            value={contact.followTime ? dayjs(contact.followTime) : null}
+            value={getTimeValue()}
+            onChange={handleTimeChange}
           />
         </div>
       </div>
@@ -115,7 +189,8 @@ const ChatInfo = ({
         <Select
           placeholder="Select Product"
           className={styles.select}
-          value={contact.productId}
+          value={formData.productId}
+          onChange={(value) => handleInputChange('productId', value)}
         >
           {products.map(product => (
             <Option key={product.id} value={product.id}>
@@ -131,7 +206,8 @@ const ChatInfo = ({
         <Select
           placeholder="Select Stage"
           className={styles.select}
-          value={contact.stageId}
+          value={formData.stageId}
+          onChange={(value) => handleInputChange('stageId', value)}
         >
           {stages.map(stage => (
             <Option key={stage.id} value={stage.id}>
@@ -147,7 +223,8 @@ const ChatInfo = ({
         <Select
           placeholder="Select Lead Source"
           className={styles.select}
-          value={contact.leadSourceId}
+          value={formData.leadSourceId}
+          onChange={(value) => handleInputChange('leadSourceId', value)}
         >
           {leadSources.map(source => (
             <Option key={source.id} value={source.id}>
