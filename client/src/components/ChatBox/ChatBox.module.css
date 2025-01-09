@@ -1,22 +1,43 @@
 .chatBoxContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 65px);
   background-color: #f0f2f5;
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
 }
 
 .messagesContainer {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  height: calc(100% - 180px);
+}
+
+.messagesContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messagesContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messagesContainer::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
 }
 
 .inputContainer {
   background-color: #fff;
   border-top: 1px solid #e8e8e8;
   padding: 8px;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  z-index: 1;
 }
 
 .formattingTools {
@@ -31,6 +52,7 @@
   align-items: flex-end;
   gap: 8px;
   padding: 8px;
+  border-radius: 8px;
 }
 
 .textarea {
@@ -41,12 +63,12 @@
 }
 
 .iconButton {
-  color: #666;
+  color: #aa2478;
   padding: 4px 8px;
 }
 
 .iconButton:hover {
-  color: #1890ff;
+  color: #aa2478 !important;
   background-color: #f0f0f0;
 }
 
@@ -58,4 +80,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.tabs {
+  margin: 0 8px;
+}
+
+.tabs :global(.ant-tabs-nav) {
+  margin-bottom: 8px;
+}
+
+.tabs :global(.ant-tabs-tab) {
+  padding: 8px 16px;
+}
+
+.tabs :global(.ant-tabs-tab.ant-tabs-tab-active) {
+  color: #aa2478;
+}
+
+.tabs :global(.ant-tabs-tab:hover) {
+  color: #aa2478;
+}
+
+.tabs :global(.ant-tabs-ink-bar) {
+  background-color: #aa2478;
+}
+
+.notesInput {
+  background-color: #fff9e6;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.assignmentSection {
+  display: none;
+}
+
+.assignmentAlert {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #fffbe6;
+}
+
+.assignmentAlert :global(.ant-alert-message) {
+  color: #666;
 } 

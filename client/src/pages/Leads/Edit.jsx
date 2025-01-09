@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout, Typography, Button, message, Spin } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, message, Spin, Select, Option } from 'antd';
+import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons';
 import ChatBox from '../../components/ChatBox/ChatBox';
 import ChatInfo from '../../components/ChatInfo/ChatInfo';
 import axios from 'axios';
@@ -14,6 +14,8 @@ const LeadEdit = () => {
   const navigate = useNavigate();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [assignedUser, setAssignedUser] = useState(lead?.assigned_user || null);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -30,9 +32,27 @@ const LeadEdit = () => {
     fetchLead();
   }, [id]);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('/api/users');
+        setUsers(response.data);
+      } catch (error) {
+        message.error('Failed to fetch users');
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   const handleSendMessage = (message) => {
-    // Implement message sending logic here
+    // Handle WhatsApp message sending
     console.log('Sending message:', message);
+  };
+
+  const handleAddNote = (note) => {
+    // Handle internal note adding
+    console.log('Adding note:', note);
   };
 
   const handleAddTag = () => {
@@ -41,6 +61,16 @@ const LeadEdit = () => {
 
   const handleLinkCompany = () => {
     // Implement company linking logic here
+  };
+
+  const handleAssigneeChange = async (userId) => {
+    try {
+      await axios.patch(`/api/leads/${id}/assign`, { assigned_user: userId });
+      setAssignedUser(userId);
+      message.success('Lead assigned successfully');
+    } catch (error) {
+      message.error('Failed to assign lead');
+    }
   };
 
   if (loading) {
@@ -52,28 +82,52 @@ const LeadEdit = () => {
   }
 
   return (
-    <Layout style={{ height: '100vh', background: '#fff' }}>
-      {/* Header */}
+    <Layout style={{ height: '100vh' }}>
       <div style={{ 
         padding: '16px 24px', 
-        borderBottom: '1px solid #f0f0f0',
+        background: '#fff',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        justifyContent: 'space-between',
+        borderBottom: '1px solid #f0f0f0'
       }}>
-        <Button 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate(-1)}
-        />
-        <Title level={4} style={{ margin: 0 }}>
-          Lead Details
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate(-1)}
+          />
+          <Title level={4} style={{ margin: 0 }}>
+            Lead Details
+          </Title>
+        </div>
+        
+        <Select
+          placeholder="Assign to user"
+          onChange={handleAssigneeChange}
+          value={assignedUser}
+          style={{ width: 200 }}
+          loading={loading}
+          suffixIcon={<UserOutlined />}
+        >
+          {users.map(user => (
+            <Option key={user.id} value={user.id}>
+              {user.name}
+            </Option>
+          ))}
+        </Select>
       </div>
 
-      {/* Main Content */}
-      <Layout style={{ background: '#fff' }}>
-        <Content style={{ height: 'calc(100vh - 65px)' }}>
-          <ChatBox onSendMessage={handleSendMessage} />
+      <Layout style={{ background: '#fff', height: 'calc(100vh - 65px)' }}>
+        <Content style={{ 
+          height: '100%',
+          overflow: 'hidden'
+        }}>
+          <ChatBox 
+            onSendMessage={handleSendMessage}
+            onAddNote={handleAddNote}
+            currentAssignee={assignedUser}
+            onAssigneeChange={handleAssigneeChange}
+          />
         </Content>
         
         <Sider 

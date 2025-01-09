@@ -7,6 +7,9 @@
   --color-primary-hover: rgba(170, 36, 121, 0.200);
   --color-primary-active: rgba(170, 36, 121, 0.200);
 }
+:where(.css-dev-only-do-not-override-161f05s).ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #aa2478 !important;
+}
 
 .custom-tabs .ant-tabs-tab:hover {
   color: #aa2478 !important;
