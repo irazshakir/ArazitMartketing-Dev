@@ -20,6 +20,21 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
+// Define inline styles separately from CSS modules
+const inlineStyles = {
+  assignmentSection: {
+    padding: '12px 16px',
+    borderBottom: '1px solid #f0f0f0',
+    backgroundColor: '#fffbe6'  // Light yellow background
+  },
+  assignmentAlert: {
+    marginBottom: 0,
+    border: 'none',
+    backgroundColor: 'transparent',
+    padding: 0
+  }
+};
+
 const ChatBox = ({ 
   onSendMessage, 
   onAddNote, 
@@ -90,32 +105,19 @@ const ChatBox = ({
 
   return (
     <div className={styles.chatBoxContainer}>
-      <div className={styles.assignmentSection}>
+      {/* Message Display Area */}
+      <div className={styles.messagesContainer}>
+        {/* Messages will be rendered here */}
+      </div>
+
+      {/* Assignment Alert */}
+      <div style={inlineStyles.assignmentSection}>
         <Alert
           message={`This conversation is assigned to ${getAssignedUserName()}`}
           type="warning"
           showIcon
-          className={styles.assignmentAlert}
-          action={
-            <Select
-              placeholder="Reassign to"
-              onChange={handleAssignUser}
-              value={currentAssignee}
-              style={{ width: 120 }}
-              loading={loading}
-            >
-              {users.map(user => (
-                <Option key={user.id} value={user.id}>
-                  {user.name}
-                </Option>
-              ))}
-            </Select>
-          }
+          style={inlineStyles.assignmentAlert}
         />
-      </div>
-      {/* Message Display Area */}
-      <div className={styles.messagesContainer}>
-        {/* Messages will be rendered here */}
       </div>
 
       {/* Input Area */}

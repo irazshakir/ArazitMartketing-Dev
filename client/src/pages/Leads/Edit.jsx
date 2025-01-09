@@ -67,9 +67,14 @@ const LeadEdit = () => {
 
   const handleAssigneeChange = async (userId) => {
     try {
-      await axios.patch(`/api/leads/assign/${id}`, { assigned_user: userId });
-      setAssignedUser(userId);
-      message.success('Lead assigned successfully');
+      const response = await axios.patch(`/api/leads/assign/${id}`, { 
+        assigned_user: userId
+      });
+      
+      if (response.data) {
+        setAssignedUser(userId);
+        message.success('Lead assigned successfully');
+      }
     } catch (error) {
       message.error('Failed to assign lead');
     }
