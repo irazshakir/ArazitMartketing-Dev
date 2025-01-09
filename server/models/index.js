@@ -131,7 +131,7 @@ export const LeadModel = {
       const { data: updatedLead, error } = await supabase
         .from('leads')
         .update({
-          ...data,
+          assigned_user: data.assigned_user,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)

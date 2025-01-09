@@ -106,6 +106,29 @@ router.delete('/leads/:id', async (req, res) => {
   }
 });
 
+// Add new route for lead assignment
+router.patch('/leads/assign/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assigned_user } = req.body;
+
+    const lead = await LeadModel.update(id, {
+      assigned_user: assigned_user
+    });
+
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+
+    res.json(lead);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error assigning lead', 
+      error: error.message 
+    });
+  }
+});
+
 // Get single lead with related data
 router.get('/leads/:id', async (req, res) => {
   try {
@@ -121,28 +144,6 @@ router.get('/leads/:id', async (req, res) => {
   }
 });
 
-// Add new route for lead assignment
-router.patch('/leads/assign/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { assigned_user } = req.body;
 
-    const lead = await LeadModel.update(id, {
-      assigned_user,
-      updated_at: new Date().toISOString()
-    });
-
-    if (!lead) {
-      return res.status(404).json({ message: 'Lead not found' });
-    }
-
-    res.json(lead);
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Error assigning lead', 
-      error: error.message 
-    });
-  }
-});
 
 export default router; 
