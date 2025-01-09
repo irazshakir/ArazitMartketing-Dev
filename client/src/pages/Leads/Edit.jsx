@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout, Typography, Button, message, Spin, Select, Option } from 'antd';
+import { Layout, Typography, Button, message, Spin, Select } from 'antd';
 import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons';
 import ChatBox from '../../components/ChatBox/ChatBox';
 import ChatInfo from '../../components/ChatInfo/ChatInfo';
@@ -88,31 +88,32 @@ const LeadEdit = () => {
         background: '#fff',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        gap: '16px',
         borderBottom: '1px solid #f0f0f0'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Button 
-            icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate(-1)}
-          />
-          <Title level={4} style={{ margin: 0 }}>
-            Lead Details
-          </Title>
-        </div>
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate(-1)}
+        />
+        <Title level={4} style={{ margin: 0, flex: 1 }}>
+          Lead Details
+        </Title>
         
         <Select
           placeholder="Assign to user"
           onChange={handleAssigneeChange}
           value={assignedUser}
-          style={{ width: 200 }}
+          style={{ 
+            width: 200,
+            marginLeft: 'auto'
+          }}
           loading={loading}
           suffixIcon={<UserOutlined />}
         >
           {users.map(user => (
-            <Option key={user.id} value={user.id}>
+            <Select.Option key={user.id} value={user.id}>
               {user.name}
-            </Option>
+            </Select.Option>
           ))}
         </Select>
       </div>
