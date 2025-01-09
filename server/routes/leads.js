@@ -80,12 +80,15 @@ router.post('/leads', async (req, res) => {
 });
 
 // Update lead
-router.put('/leads/:id', async (req, res) => {
+router.patch('/leads/:id', async (req, res) => {
   try {
     const lead = await LeadModel.update(req.params.id, req.body);
     res.json(lead);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating lead', error: error.message });
+    res.status(500).json({ 
+      message: 'Error updating lead', 
+      error: error.message
+    });
   }
 });
 
@@ -100,6 +103,45 @@ router.delete('/leads/:id', async (req, res) => {
     res.json({ message: 'Lead deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting lead', error });
+  }
+});
+
+// Get single lead with related data
+router.get('/leads/:id', async (req, res) => {
+  try {
+    const lead = await LeadModel.findOne(req.params.id);
+    
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    res.json(lead);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching lead details', error });
+  }
+});
+
+// Add new route for lead assignment
+router.patch('/leads/assign/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assigned_user } = req.body;
+
+    const lead = await LeadModel.update(id, {
+      assigned_user,
+      updated_at: new Date().toISOString()
+    });
+
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+
+    res.json(lead);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error assigning lead', 
+      error: error.message 
+    });
   }
 });
 

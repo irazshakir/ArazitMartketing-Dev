@@ -20,15 +20,14 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api', leadRoutes);
 app.use('/api', productRoutes);
 app.use('/api', stageRoutes);
 app.use('/api', leadSourceRoutes);
 app.use('/api', userRoutes);
-app.use('/api', leadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
   res.status(500).json({
     message: 'Internal server error',
     error: err.message

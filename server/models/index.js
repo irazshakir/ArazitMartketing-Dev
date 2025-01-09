@@ -126,31 +126,20 @@ export const LeadModel = {
     }
   },
 
-  update: async (id, values) => {
+  update: async (id, data) => {
     try {
-      const updateValues = {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        lead_product: values.lead_product,
-        lead_stage: values.lead_stage,
-        lead_source_id: values.lead_source_id,
-        assigned_user: values.assigned_user,
-        initial_remarks: values.initial_remarks,
-        lead_active_status: values.lead_active_status,
-        fu_date: values.fu_date,
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
+      const { data: updatedLead, error } = await supabase
         .from('leads')
-        .update(updateValues)
+        .update({
+          ...data,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return updatedLead;
     } catch (error) {
       throw error;
     }
@@ -167,5 +156,39 @@ export const LeadModel = {
     } catch (error) {
       throw error;
     }
-  }
+  },
+
+  findOne: async (id) => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          name,
+          phone,
+          email,
+          lead_product,
+          lead_stage,
+          lead_source_id,
+          assigned_user,
+          fu_date,
+          fu_hour,
+          fu_minutes,
+          fu_period,
+          lead_active_status,
+          initial_remarks,
+          products:lead_product (product_name),
+          stages:lead_stage (stage_name),
+          lead_sources:lead_source_id (lead_source_name),
+          users:assigned_user (name)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
 }; 
