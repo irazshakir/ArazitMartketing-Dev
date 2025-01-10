@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Typography, Tooltip, Tabs, Select, Alert } from 'antd';
+import { Input, Button, Typography, Tooltip, Tabs, Select, Alert, Avatar } from 'antd';
 import {
   SendOutlined,
   SmileOutlined,
@@ -34,6 +34,8 @@ const inlineStyles = {
     padding: 0
   }
 };
+
+
 
 const ChatBox = ({ 
   onSendMessage, 
@@ -146,15 +148,21 @@ const ChatBox = ({
     return notes.map((note, index) => (
       <div 
         key={index}
-        className={`${styles.messageContainer} ${note.is_note ? styles.noteMessage : styles.userMessage}`}
-        style={{ backgroundColor: '#fffbe6' }} // Yellow background for notes
+        className={`${styles.messageContainer} ${note.users?.name === 'admin' ? styles.sentMessage : ''}`}
       >
-        <div className={styles.message}>
-          <div className={styles.messageHeader}>
-            <span className={styles.userName}>{note.users?.name || 'Unknown'}</span>
-            <span className={styles.messageTime}>{formatDate(note.created_at)}</span>
+        <div className={styles.avatarContainer}>
+          <Avatar size={22} style={{ backgroundColor: '#f56a00' }}>
+            {note.users?.name?.charAt(0).toUpperCase() || 'U'}
+          </Avatar>
+        </div>
+        <div className={styles.messageContent}>
+          <div className={styles.messageBubble}>
+            <div className={styles.messageText}>{note.note}</div>
+            <div className={styles.messageFooter}>
+              <span className={styles.userName}>{note.users?.name || 'Unknown'}</span>
+              <span className={styles.messageTime}>{formatDate(note.created_at)}</span>
+            </div>
           </div>
-          <div className={styles.messageContent}>{note.note}</div>
         </div>
       </div>
     ));

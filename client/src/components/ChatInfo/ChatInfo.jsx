@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Button, Avatar, Input, DatePicker, TimePicker, Select, Switch, message } from 'antd';
-import { WhatsAppOutlined } from '@ant-design/icons';
+import { WhatsAppOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import styles from './ChatInfo.module.css';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -123,6 +123,53 @@ const ChatInfo = ({
       return dayjs(`${hour}:${minutes} ${period}`, 'hh:mm A');
     }
     return null;
+  };
+
+  const renderServiceButton = () => {
+    switch (formData.productId) {
+      case 1: // Assuming ID 1 is for "Umrah Custom Packages"
+        return (
+          <Button 
+            icon={<PlusCircleOutlined />}
+            type="text"
+            className={styles.serviceButton}
+          >
+            Add Custom Package
+          </Button>
+        );
+      case 2: // Assuming ID 2 is for "Umrah Readymade Package"
+        return (
+          <Button 
+            icon={<PlusCircleOutlined />}
+            type="text"
+            className={styles.serviceButton}
+          >
+            Add Readymade Package
+          </Button>
+        );
+      case 3: // Assuming ID 3 is for "Flights"
+        return (
+          <Button 
+            icon={<PlusCircleOutlined />}
+            type="text"
+            className={styles.serviceButton}
+          >
+            Add Flight Details
+          </Button>
+        );
+      case 4: // Assuming ID 4 is for "Visas"
+        return (
+          <Button 
+            icon={<PlusCircleOutlined />}
+            type="text"
+            className={styles.serviceButton}
+          >
+            Add Visa Details
+          </Button>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -249,15 +296,23 @@ const ChatInfo = ({
       </div>
 
       {/* Update Button */}
-      <Button 
-        type="primary" 
-        size="small"
-        onClick={handleUpdate}
-        className={styles.updateButton}
-        style={{ backgroundColor: theme.colors.primary }}
-      >
-        Update Lead
-      </Button>
+      <>
+        <Button 
+          type="primary" 
+          size="small"
+          onClick={handleUpdate}
+          className={styles.updateButton}
+          style={{ backgroundColor: theme.colors.primary }}
+        >
+          Update Lead
+        </Button>
+
+        {/* Service Details Section */}
+        <div className={styles.sectionHeader} style={{ marginTop: '24px' }}>
+          <Title level={5}>Service Details</Title>
+        </div>
+        {renderServiceButton()}
+      </>
     </div>
   );
 };

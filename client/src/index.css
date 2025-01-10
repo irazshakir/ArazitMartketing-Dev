@@ -11,6 +11,15 @@
   color: #aa2478 !important;
 }
 
+h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-dev-only-do-not-override-161f05s).ant-typography-h5, div:where(.css-dev-only-do-not-override-161f05s).ant-typography-h5>textarea, :where(.css-dev-only-do-not-override-161f05s).ant-typography h5 {
+  margin-bottom: 0.5em;
+  margin-top: 1.5em;
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 .custom-tabs .ant-tabs-tab:hover {
   color: #aa2478 !important;
 }
