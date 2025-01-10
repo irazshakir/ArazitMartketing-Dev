@@ -5,6 +5,7 @@ import styles from './ChatInfo.module.css';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import theme from '../../theme';
+import CustomUmrahPackage from '../CustomUmrah/CustomUmrahPackage';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -27,6 +28,7 @@ const ChatInfo = ({
     followMinutes: contact.fu_minutes,
     followPeriod: contact.fu_period
   });
+  const [isPackageModalVisible, setIsPackageModalVisible] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -127,15 +129,23 @@ const ChatInfo = ({
 
   const renderServiceButton = () => {
     switch (formData.productId) {
-      case 1: // Assuming ID 1 is for "Umrah Custom Packages"
+      case 1: // Umrah Custom Packages
         return (
-          <Button 
-            icon={<PlusCircleOutlined />}
-            type="text"
-            className={styles.serviceButton}
-          >
-            Add Custom Package
-          </Button>
+          <>
+            <Button 
+              icon={<PlusCircleOutlined />}
+              type="text"
+              className={styles.serviceButton}
+              onClick={() => setIsPackageModalVisible(true)}
+            >
+              Add Custom Package
+            </Button>
+            <CustomUmrahPackage
+              visible={isPackageModalVisible}
+              onCancel={() => setIsPackageModalVisible(false)}
+              leadId={contact.id}
+            />
+          </>
         );
       case 2: // Assuming ID 2 is for "Umrah Readymade Package"
         return (

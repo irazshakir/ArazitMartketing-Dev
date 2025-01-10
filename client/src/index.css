@@ -63,3 +63,18 @@ h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-d
 .hover\:bg-primary-hover:hover {
   background-color: var(--color-primary-hover);
 }
+
+:where(.css-dev-only-do-not-override-161f05s).ant-steps .ant-steps-item-process .ant-steps-item-icon {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+:where(.css-dev-only-do-not-override-161f05s).ant-steps .ant-steps-item-finish .ant-steps-item-icon {
+  background-color: rgba(170, 36, 120, 0.2) !important;
+  border-color: rgba(170, 36, 120, 0.2) !important;
+}
+
+.anticon svg {
+  display: inline-block;
+  color: var(--color-primary) !important;
+}
