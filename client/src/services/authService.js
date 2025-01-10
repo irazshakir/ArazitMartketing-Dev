@@ -27,7 +27,7 @@ export const authService = {
         .from('sessions')
         .insert([{
           user_id: userData.id,
-          token: Date.now().toString(), // This will be replaced by JWT token
+          token: Date.now().toString(),
           ip_address: window.clientInformation?.userAgentData?.platform || 'unknown',
           user_agent: navigator.userAgent,
           expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -44,6 +44,9 @@ export const authService = {
 
       // 5. Store session in localStorage
       localStorage.setItem('session', JSON.stringify(sessionData));
+      
+      // 6. Store token separately
+      localStorage.setItem('token', sessionData.token);
 
       return {
         session: sessionData,

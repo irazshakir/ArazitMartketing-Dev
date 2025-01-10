@@ -19,6 +19,7 @@ const LeadEdit = () => {
   const [loading, setLoading] = useState(true);
   const [assignedUser, setAssignedUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -49,12 +50,67 @@ const LeadEdit = () => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.error('No token found');
+          message.error('Please login again');
+          return;
+        }
+
+        // Make sure to send token in correct format
+        const response = await axios.get('/api/current-user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.data.status === 'success') {
+          setCurrentUser(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        if (error.response?.status === 401) {
+          message.error('Session expired. Please login again');
+        } else {
+          message.error('Failed to get current user');
+        }
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   const handleSendMessage = (message) => {
     // Handle WhatsApp message sending
   };
 
-  const handleAddNote = (note) => {
-    // Handle internal note adding
+  const handleAddNote = async (note) => {
+    try {
+      if (!currentUser) {
+        message.warning('Please login to add notes');
+        return;
+      }
+
+      const response = await axios.post(`/api/leads/${id}/notes`, {
+        note,
+        lead_id: id,
+        note_added_by: currentUser.user_id,
+        is_note: true
+      });
+      
+      if (response.data) {
+        message.success('Note added successfully');
+      }
+    } catch (error) {
+      message.error('Failed to add note');
+      console.error('Error adding note:', error);
+    }
   };
 
   const handleAddTag = () => {
@@ -89,9 +145,9 @@ const LeadEdit = () => {
   }
 
   return (
-    <Layout style={{ height: '100vh' }}>
+    <Layout style={{ height: '100vh', minHeight: '100vh', margin: 0 }}>
       <div style={{ 
-        padding: '16px 24px', 
+        padding: '8px 16px',
         background: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -110,10 +166,7 @@ const LeadEdit = () => {
           placeholder="Assign to user"
           onChange={handleAssigneeChange}
           value={assignedUser}
-          style={{ 
-            width: 200,
-            marginLeft: 'auto'
-          }}
+          style={{ width: 200 }}
           loading={loading}
           suffixIcon={<UserOutlined />}
         >
@@ -125,10 +178,16 @@ const LeadEdit = () => {
         </Select>
       </div>
 
-      <Layout style={{ background: '#fff', height: 'calc(100vh - 65px)' }}>
+      <Layout style={{ 
+        background: '#fff', 
+        height: 'calc(100vh - 57px)',
+        margin: 0
+      }}>
         <Content style={{ 
           height: '100%',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          padding: 0,
+          margin: 0
         }}>
           <ChatBox 
             onSendMessage={handleSendMessage}
@@ -144,7 +203,9 @@ const LeadEdit = () => {
           style={{ 
             background: '#fff',
             borderLeft: '1px solid #f0f0f0',
-            overflow: 'auto'
+            overflow: 'auto',
+            padding: 0,
+            margin: 0
           }}
         >
           <ChatInfo

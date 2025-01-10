@@ -47,6 +47,7 @@ const ChatBox = ({
   const [activeTab, setActiveTab] = useState('reply');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [notes, setNotes] = useState([]);
 
   // Fetch active users
   useEffect(() => {
@@ -65,6 +66,27 @@ const ChatBox = ({
     fetchUsers();
   }, []);
 
+  // Add this new effect to fetch notes
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        if (id) {
+          const response = await axios.get(`/api/leads/${id}/notes`);
+          if (response.data) {
+            setNotes(response.data);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch notes:', error);
+        message.error('Failed to fetch notes');
+      }
+    };
+
+    if (id) {
+      fetchNotes();
+    }
+  }, [id]);
+
   // Get assigned user name
   const getAssignedUserName = () => {
     if (!currentAssignee) return 'Admin';
@@ -72,14 +94,22 @@ const ChatBox = ({
     return assignedUser?.name || 'Admin';
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim()) {
-      if (activeTab === 'reply') {
-        onSendMessage(message);
-      } else {
-        onAddNote(message);
+      try {
+        if (activeTab === 'reply') {
+          onSendMessage(message);
+        } else {
+          // Get current user from parent component
+          await onAddNote(message);
+          // Refresh notes after adding
+          const response = await axios.get(`/api/leads/${id}/notes`);
+          setNotes(response.data || []);
+        }
+        setMessage('');
+      } catch (error) {
+        console.error('Error sending message:', error);
       }
-      setMessage('');
     }
   };
 
@@ -103,11 +133,37 @@ const ChatBox = ({
     }
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: '2-digit'
+    });
+  };
+
+  const renderMessages = () => {
+    return notes.map((note, index) => (
+      <div 
+        key={index}
+        className={`${styles.messageContainer} ${note.is_note ? styles.noteMessage : styles.userMessage}`}
+        style={{ backgroundColor: '#fffbe6' }} // Yellow background for notes
+      >
+        <div className={styles.message}>
+          <div className={styles.messageHeader}>
+            <span className={styles.userName}>{note.users?.name || 'Unknown'}</span>
+            <span className={styles.messageTime}>{formatDate(note.created_at)}</span>
+          </div>
+          <div className={styles.messageContent}>{note.note}</div>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className={styles.chatBoxContainer}>
-      {/* Message Display Area */}
       <div className={styles.messagesContainer}>
-        {/* Messages will be rendered here */}
+        {renderMessages()}
       </div>
 
       {/* Assignment Alert */}

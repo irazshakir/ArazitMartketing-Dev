@@ -159,13 +159,18 @@ const Sidebar = () => {
       className="min-h-screen bg-white shadow-sm relative"
       theme="light"
       trigger={null}
+      style={{ margin: 0, padding: 0 }}
     >
-      <div className="p-4 flex justify-between items-center">
+      <div className="flex justify-between items-center" style={{ padding: '16px' }}>
         <Logo collapsed={collapsed} />
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-gray-500 hover:text-primary p-2 rounded transition-colors"
-          style={{ '--tw-text-opacity': 1, '--text-primary': theme.colors.primary }}
+          className="text-gray-500 hover:text-primary rounded transition-colors"
+          style={{ 
+            '--tw-text-opacity': 1, 
+            '--text-primary': theme.colors.primary,
+            padding: '8px'
+          }}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </button>

@@ -6,6 +6,7 @@ import ArazitLogo from '../assets/Arazit.svg';
 import { authService } from '../services/authService';
 import { message } from 'antd';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const { Title, Text } = Typography;
 
@@ -50,9 +51,15 @@ const Login = () => {
   const onFinish = async (values) => {
     try {
       setLoading(true);
-      const { userData } = await authService.signIn(values);
+      const response = await authService.signIn(values);
+      const { userData, token } = response;
       
-      // Route based on user role
+      // Save token to localStorage
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
+      // Keep existing role-based routing
       switch (userData.roles.role_name) {
         case 'admin':
           navigate('/admin/dashboard');

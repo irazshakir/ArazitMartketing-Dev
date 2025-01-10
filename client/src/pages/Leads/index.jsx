@@ -11,7 +11,8 @@ import {
   Input,
   Select,
   Switch,
-  message 
+  message,
+  Layout 
 } from 'antd';
 import { 
   FilterOutlined, 
@@ -246,6 +247,7 @@ const Leads = () => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    margin: 0
   };
 
   const actionButtonStyle = {
@@ -254,201 +256,213 @@ const Leads = () => {
   };
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <div style={headerStyle}>
-        <Title level={4} style={{ margin: 0 }}>Leads</Title>
-        <div style={actionButtonStyle}>
-          <Button icon={<FilterOutlined />}>Filter</Button>
-          <Button icon={<ExportOutlined />}>Export</Button>
-          <Button icon={<ImportOutlined />}>Import</Button>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setIsModalVisible(true);
-              setEditingLead(null);
-              form.resetFields();
-            }}
-            style={{ background: theme.colors.primary }}
-          >
-            Add Lead
-          </Button>
-        </div>
-      </div>
-
-      {/* Table Section */}
-      <div style={{ padding: '24px' }}>
-        {loading ? (
-          <TableSkeleton />
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={leads}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: setSelectedRowKeys,
-            }}
-            rowKey="id"
-            pagination={{
-              total: leads.length,
-              showTotal: (total) => `Total ${total} items`,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-          />
-        )}
-      </div>
-
-      {/* Add/Edit Lead Modal */}
-      <Modal
-        title={editingLead ? 'Edit Lead' : 'Add Lead'}
-        visible={isModalVisible}
-        onCancel={() => {
-          setIsModalVisible(false);
-          setEditingLead(null);
-          form.resetFields();
-        }}
-        footer={null}
-        width={720}
-        bodyStyle={{ 
-          maxHeight: 'calc(100vh - 200px)',
-          overflow: 'auto'
-        }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleAddEdit}
-          initialValues={{ lead_active_status: true }}
-          style={{ padding: '20px 0' }}
-        >
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: 'Please input name!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[{ type: 'email', message: 'Please input valid email!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="phone"
-            label="Phone"
-            rules={[{ required: true, message: 'Please input phone!' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="lead_product"
-            label="Product"
-            rules={[{ required: true, message: 'Please select product!' }]}
-          >
-            <Select>
-              {products.map(product => (
-                <Select.Option key={product.id} value={product.id}>
-                  {product.product_name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="lead_stage"
-            label="Stage"
-            rules={[{ required: true, message: 'Please select stage!' }]}
-          >
-            <Select>
-              {stages.map(stage => (
-                <Select.Option key={stage.id} value={stage.id}>
-                  {stage.stage_name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="lead_source_id"
-            label="Lead Source"
-            rules={[{ required: true, message: 'Please select lead source!' }]}
-          >
-            <Select>
-              {leadSources.map(source => (
-                <Select.Option key={source.id} value={source.id}>
-                  {source.lead_source_name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="assigned_user"
-            label="Lead Assigned"
-            rules={[{ required: true, message: 'Please select user!' }]}
-          >
-            <Select>
-              {users.map(user => (
-                <Select.Option key={user.id} value={user.id}>
-                  {user.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="fu_date"
-            label="Followup Date"
-            rules={[{ required: true, message: 'Please select followup date!' }]}
-          >
-            <Input type="date" />
-          </Form.Item>
-
-          <Form.Item
-            name="initial_remarks"
-            label="Note"
-          >
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item
-            name="lead_active_status"
-            label="Status"
-            valuePropName="checked"
-          >
-            <Switch 
-              checkedChildren="Active" 
-              unCheckedChildren="Inactive"
-              style={{ backgroundColor: theme.colors.primary }}
-            />
-          </Form.Item>
-
-          
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" style={{ background: theme.colors.primary }}>
-                {editingLead ? 'Update' : 'Submit'}
-              </Button>
-              <Button onClick={() => {
-                setIsModalVisible(false);
+    <Layout style={{ margin: 0, padding: 0 }}>
+      <div style={{ 
+        background: '#fff', 
+        minHeight: '100vh',
+        margin: 0,
+        padding: 0,
+        width: '100%'
+      }}>
+        {/* Header Section */}
+        <div style={headerStyle}>
+          <Title level={4} style={{ margin: 0 }}>Leads</Title>
+          <div style={actionButtonStyle}>
+            <Button icon={<FilterOutlined />}>Filter</Button>
+            <Button icon={<ExportOutlined />}>Export</Button>
+            <Button icon={<ImportOutlined />}>Import</Button>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setIsModalVisible(true);
                 setEditingLead(null);
                 form.resetFields();
-              }}>
-                Cancel
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+              }}
+              style={{ background: theme.colors.primary }}
+            >
+              Add Lead
+            </Button>
+          </div>
+        </div>
+
+        {/* Table Section */}
+        <div style={{ 
+          padding: '24px',
+          margin: 0
+        }}>
+          {loading ? (
+            <TableSkeleton />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={leads}
+              rowSelection={{
+                selectedRowKeys,
+                onChange: setSelectedRowKeys,
+              }}
+              rowKey="id"
+              pagination={{
+                total: leads.length,
+                showTotal: (total) => `Total ${total} items`,
+                showSizeChanger: true,
+                showQuickJumper: true,
+              }}
+              style={{ margin: 0 }}
+            />
+          )}
+        </div>
+
+        {/* Add/Edit Lead Modal */}
+        <Modal
+          title={editingLead ? 'Edit Lead' : 'Add Lead'}
+          visible={isModalVisible}
+          onCancel={() => {
+            setIsModalVisible(false);
+            setEditingLead(null);
+            form.resetFields();
+          }}
+          footer={null}
+          width={720}
+          bodyStyle={{ 
+            maxHeight: 'calc(100vh - 200px)',
+            overflow: 'auto'
+          }}
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleAddEdit}
+            initialValues={{ lead_active_status: true }}
+            style={{ padding: '20px 0' }}
+          >
+            <Form.Item
+              name="name"
+              label="Name"
+              rules={[{ required: true, message: 'Please input name!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[{ type: 'email', message: 'Please input valid email!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="phone"
+              label="Phone"
+              rules={[{ required: true, message: 'Please input phone!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="lead_product"
+              label="Product"
+              rules={[{ required: true, message: 'Please select product!' }]}
+            >
+              <Select>
+                {products.map(product => (
+                  <Select.Option key={product.id} value={product.id}>
+                    {product.product_name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="lead_stage"
+              label="Stage"
+              rules={[{ required: true, message: 'Please select stage!' }]}
+            >
+              <Select>
+                {stages.map(stage => (
+                  <Select.Option key={stage.id} value={stage.id}>
+                    {stage.stage_name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="lead_source_id"
+              label="Lead Source"
+              rules={[{ required: true, message: 'Please select lead source!' }]}
+            >
+              <Select>
+                {leadSources.map(source => (
+                  <Select.Option key={source.id} value={source.id}>
+                    {source.lead_source_name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="assigned_user"
+              label="Lead Assigned"
+              rules={[{ required: true, message: 'Please select user!' }]}
+            >
+              <Select>
+                {users.map(user => (
+                  <Select.Option key={user.id} value={user.id}>
+                    {user.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="fu_date"
+              label="Followup Date"
+              rules={[{ required: true, message: 'Please select followup date!' }]}
+            >
+              <Input type="date" />
+            </Form.Item>
+
+            <Form.Item
+              name="initial_remarks"
+              label="Note"
+            >
+              <TextArea rows={4} />
+            </Form.Item>
+
+            <Form.Item
+              name="lead_active_status"
+              label="Status"
+              valuePropName="checked"
+            >
+              <Switch 
+                checkedChildren="Active" 
+                unCheckedChildren="Inactive"
+                style={{ backgroundColor: theme.colors.primary }}
+              />
+            </Form.Item>
+
+            
+
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" style={{ background: theme.colors.primary }}>
+                  {editingLead ? 'Update' : 'Submit'}
+                </Button>
+                <Button onClick={() => {
+                  setIsModalVisible(false);
+                  setEditingLead(null);
+                  form.resetFields();
+                }}>
+                  Cancel
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </Layout>
   );
 };
 
