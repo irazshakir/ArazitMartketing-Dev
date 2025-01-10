@@ -9,6 +9,7 @@ import stageRoutes from './routes/stages.js';
 import leadSourceRoutes from './routes/leadSources.js';
 import userRoutes from './routes/users.js';
 import leadRoutes from './routes/leads.js';
+import authRoutes from './src/routes/auth.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api', authRoutes);
 app.use('/api', leadRoutes);
 app.use('/api', productRoutes);
 app.use('/api', stageRoutes);

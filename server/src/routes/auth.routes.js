@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { SessionModel } from '../../models/index.js';
 
 const router = express.Router();
 
@@ -127,68 +128,56 @@ router.post('/signup', async (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const userAgent = req.headers['user-agent'];
-    const ipAddress = req.ip;
-
-    // Get user data including role
+    
+    // Get user data
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*, roles(*)')
       .eq('email', email)
       .single();
 
-    if (userError) throw new Error('User not found');
+    if (userError) throw userError;
+    
+    if (!userData) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials'
+      });
+    }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, userData.password);
-    if (!isValidPassword) {
-      throw new Error('Invalid credentials');
+    const validPassword = await bcrypt.compare(password, userData.password);
+    if (!validPassword) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials'
+      });
     }
 
-    // Check if user is active
-    if (!userData.user_is_active) {
-      throw new Error('Account is inactive');
-    }
-
-    // Create JWT token
+    // Generate JWT token
     const token = jwt.sign(
-      { userId: userData.id, role: userData.roles.role_name },
+      { userId: userData.id },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
-    // Create session
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('sessions')
-      .insert([{
-        user_id: userData.id,
-        token,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        device_info: {
-          ip: ipAddress,
-          userAgent: userAgent
-        }
-      }])
-      .select()
-      .single();
-
-    if (sessionError) throw sessionError;
 
     res.status(200).json({
       status: 'success',
       message: 'Signed in successfully',
       data: {
-        user: userData,
-        session: sessionData,
+        user: {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.roles?.role_name
+        },
         token
-      },
+      }
     });
   } catch (error) {
     res.status(400).json({
       status: 'error',
-      message: error.message,
+      message: error.message
     });
   }
 });
@@ -275,6 +264,41 @@ router.post('/logout', async (req, res) => {
     res.status(400).json({
       status: 'error',
       message: error.message
+    });
+  }
+});
+
+// Add this new route to get current user from session
+router.get('/current-user', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ 
+        status: 'error',
+        message: 'No token provided' 
+      });
+    }
+
+    try {
+      const userData = await SessionModel.getCurrentUser(token);
+      res.status(200).json({
+        status: 'success',
+        data: userData
+      });
+    } catch (error) {
+      console.error('Auth route error:', error);
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid or expired session'
+      });
+    }
+  } catch (error) {
+    console.error('Unhandled error:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Error fetching current user',
+      error: error.message 
     });
   }
 });

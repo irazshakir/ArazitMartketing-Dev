@@ -1,4 +1,7 @@
 import supabase from '../config/database.js';
+import jwt from 'jsonwebtoken';
+
+
 
 export const ProductModel = {
   findAll: async ({ where } = {}) => {
@@ -191,4 +194,83 @@ export const LeadModel = {
       throw error;
     }
   },
-}; 
+
+  findNotes: async (leadId) => {
+    try {
+      const { data, error } = await supabase
+        .from('lead_notes')
+        .select(`
+          *,
+          users (name)
+        `)
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  createNote: async (noteData) => {
+    try {
+      const { data, error } = await supabase
+        .from('lead_notes')
+        .insert([noteData])
+        .select(`
+          *,
+          users (name)
+        `);
+      if (error) throw error;
+      return data[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+};
+
+export const SessionModel = {
+  getCurrentUser: async (token) => {
+    try {
+      // Get active session with user data
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('sessions')
+        .select(`
+          *,
+          users (
+            id,
+            name,
+            email,
+            roles (
+              role_name
+            )
+          )
+        `)
+        .eq('token', token)
+        .eq('is_active', true)
+        .single();
+
+      if (sessionError) throw sessionError;
+      
+      if (!sessionData) {
+        throw new Error('Session not found or expired');
+      }
+
+      // Check if session is expired
+      if (new Date(sessionData.expires_at) < new Date()) {
+        throw new Error('Session expired');
+      }
+
+      return {
+        user_id: sessionData.users.id,
+        name: sessionData.users.name,
+        email: sessionData.users.email,
+        role: sessionData.users.roles?.role_name
+      };
+    } catch (error) {
+      console.error('SessionModel error:', error);
+      throw error;
+    }
+  }
+};
+

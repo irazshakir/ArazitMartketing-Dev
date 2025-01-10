@@ -1,6 +1,7 @@
 import express from 'express';
 import { LeadModel, ProductModel, StageModel, LeadSourceModel, UserModel } from '../models/index.js';
 
+
 const router = express.Router();
 
 // Get all leads
@@ -144,6 +145,38 @@ router.get('/leads/:id', async (req, res) => {
   }
 });
 
+// GET lead notes
+router.get('/leads/:id/notes', async (req, res) => {
+  try {
+    const notes = await LeadModel.findNotes(req.params.id, {
+      include: [
+        { model: UserModel, attributes: ['name'] }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+    
+    if (!notes) {
+      return res.status(404).json({ message: 'Notes not found' });
+    }
+    
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching notes', error });
+  }
+});
 
+// POST new note
+router.post('/leads/:id/notes', async (req, res) => {
+  try {
+    const note = await LeadModel.createNote({
+      lead_id: req.params.id,
+      note: req.body.note,
+      note_added_by: req.body.note_added_by
+    });
+    res.status(201).json(note);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating note', error });
+  }
+});
 
 export default router; 
