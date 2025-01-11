@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Form, Input, InputNumber, Button, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
 const CustomUmrahServices = ({ data, onChange }) => {
   const [form] = Form.useForm();
+  const [services, setServices] = useState([{
+    service_name: '',
+    description: '',
+    price: ''
+  }]);
 
   const handleValuesChange = (_, allValues) => {
     onChange(allValues.services || []);

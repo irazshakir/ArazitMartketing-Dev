@@ -4,6 +4,7 @@ import CustomUmrahHotels from './CustomUmrahHotels';
 import CustomUmrahServices from './CustomUmrahServices';
 import CustomUmrahPrices from './CustomUmrahPrices';
 import theme from '../../theme';
+import axios from 'axios';
 
 const CustomUmrahPackage = ({ visible, onCancel, leadId }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -28,11 +29,37 @@ const CustomUmrahPackage = ({ visible, onCancel, leadId }) => {
 
   const handleSubmit = async () => {
     try {
-      // API call will be implemented later
+      // First create hotel
+      const hotelResponse = await axios.post('/api/custom-umrah/hotels', {
+        ...formData.hotels,
+        lead_id: leadId,
+        updated_at: new Date().toISOString()
+      });
+
+      const hotelId = hotelResponse.data.id;
+
+      // Then create services
+      const servicesPromises = formData.services.map(service => 
+        axios.post('/api/custom-umrah/services', {
+          ...service,
+          custom_umrah_hotel_id: hotelId,
+          updated_at: new Date().toISOString()
+        })
+      );
+      await Promise.all(servicesPromises);
+
+      // Finally create price
+      await axios.post('/api/custom-umrah/prices', {
+        ...formData.prices,
+        custom_umrah_hotel_id: hotelId,
+        updated_at: new Date().toISOString()
+      });
+
       message.success('Package created successfully');
       onCancel();
     } catch (error) {
       message.error('Failed to create package');
+      console.error('Error:', error);
     }
   };
 
@@ -111,10 +138,10 @@ const CustomUmrahPackage = ({ visible, onCancel, leadId }) => {
 };
 
 
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-}
+// if (typeof document !== 'undefined') {
+//   const styleSheet = document.createElement('style');
+//   styleSheet.innerText = styles;
+//   document.head.appendChild(styleSheet);
+// }
 
 export default CustomUmrahPackage; 

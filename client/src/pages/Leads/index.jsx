@@ -25,11 +25,17 @@ import theme from '../../theme';
 import axios from 'axios';
 import TableSkeleton from '../../components/TableSkeleton';
 import { useNavigate } from 'react-router-dom';
+import debounce from 'lodash/debounce';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 
 axios.defaults.baseURL = 'http://localhost:5000'; // Your backend URL
+
+// Move the debounced function outside the component to prevent recreation
+const debouncedFetchLeads = debounce(async (value, callback) => {
+  callback(value);
+}, 500);
 
 const Leads = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -45,6 +51,7 @@ const Leads = () => {
   const [leadSources, setLeadSources] = useState([]);
   const [users, setUsers] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch dropdown data
   useEffect(() => {
@@ -70,10 +77,10 @@ const Leads = () => {
   }, []);
 
   // Fetch leads
-  const fetchLeads = async () => {
+  const fetchLeads = async (searchValue = '') => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/leads');
+      const response = await axios.get(`/api/leads${searchValue ? `?search=${searchValue}` : ''}`);
       setLeads(response.data);
     } catch (error) {
       message.error('Failed to fetch leads');
@@ -88,7 +95,6 @@ const Leads = () => {
 
   const handleAddEdit = async (values) => {
     try {
-      // Format the date and prepare values
       const formattedValues = {
         name: values.name,
         email: values.email,
@@ -102,17 +108,11 @@ const Leads = () => {
         fu_date: values.fu_date ? new Date(values.fu_date).toISOString().split('T')[0] : null
       };
 
-      console.log('Original values:', values);
-      console.log('Formatted values:', formattedValues);
-      console.log('Editing lead ID:', editingLead?.id);
-
       if (editingLead) {
-        const response = await axios.put(`/api/leads/${editingLead.id}`, formattedValues);
-        console.log('Update response:', response.data);
+        await axios.put(`/api/leads/${editingLead.id}`, formattedValues);
         message.success('Lead updated successfully');
       } else {
-        const response = await axios.post('/api/leads', formattedValues);
-        console.log('Create response:', response.data);
+        await axios.post('/api/leads', formattedValues);
         message.success('Lead added successfully');
       }
       setIsModalVisible(false);
@@ -120,16 +120,12 @@ const Leads = () => {
       setEditingLead(null);
       fetchLeads();
     } catch (error) {
-      console.error('Operation failed:', error);
-      console.error('Error details:', error.response?.data);
       message.error('Operation failed: ' + (error.response?.data?.message || 'Unknown error'));
     }
   };
 
   // When opening the edit modal, format the date for the form
   const handleEdit = (record) => {
-    console.log('Original record:', record);
-    
     const formData = {
       name: record.name,
       email: record.email,
@@ -143,7 +139,6 @@ const Leads = () => {
       fu_date: record.fu_date ? record.fu_date.split('T')[0] : null
     };
     
-    console.log('Formatted form data:', formData);
     setEditingLead(record);
     form.setFieldsValue(formData);
     setIsModalVisible(true);
@@ -157,6 +152,21 @@ const Leads = () => {
     } catch (error) {
       message.error('Delete failed');
     }
+  };
+
+  const handleSearch = (value) => {
+    setSearchQuery(value);
+    debouncedFetchLeads(value, async (searchTerm) => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`/api/leads${searchTerm ? `?search=${searchTerm}` : ''}`);
+        setLeads(response.data);
+      } catch (error) {
+        message.error('Failed to fetch leads');
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   const columns = [
@@ -266,7 +276,16 @@ const Leads = () => {
       }}>
         {/* Header Section */}
         <div style={headerStyle}>
-          <Title level={4} style={{ margin: 0 }}>Leads</Title>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Title level={4} style={{ margin: 0 }}>Leads</Title>
+            <Input.Search
+              placeholder="Search leads..."
+              allowClear
+              style={{ width: 250 }}
+              onChange={(e) => handleSearch(e.target.value)}
+              value={searchQuery}
+            />
+          </div>
           <div style={actionButtonStyle}>
             <Button icon={<FilterOutlined />}>Filter</Button>
             <Button icon={<ExportOutlined />}>Export</Button>

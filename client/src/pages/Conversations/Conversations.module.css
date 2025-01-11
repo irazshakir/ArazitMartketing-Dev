@@ -1,0 +1,57 @@
+.conversationsLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  height: calc(100vh - 64px); /* Adjust based on your header height */
+  background: #fff;
+}
+
+.chatListContainer {
+  border-right: 1px solid #f0f0f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.chatBoxContainer {
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+.chatInfoContainer {
+  border-left: 1px solid #f0f0f0;
+  background: #fff;
+  overflow-y: auto;
+}
+
+.noChatSelected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #fafafa;
+}
+
+/* Responsive styles */
+@media (max-width: 1200px) {
+  .conversationsLayout {
+    grid-template-columns: 250px 1fr 250px;
+  }
+}
+
+@media (max-width: 992px) {
+  .conversationsLayout {
+    grid-template-columns: 200px 1fr;
+  }
+  .chatInfoContainer {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .conversationsLayout {
+    grid-template-columns: 1fr;
+  }
+  .chatListContainer {
+    display: none;
+  }
+} 

@@ -142,7 +142,10 @@ const ChatInfo = ({
             </Button>
             <CustomUmrahPackage
               visible={isPackageModalVisible}
-              onCancel={() => setIsPackageModalVisible(false)}
+              onCancel={() => {
+                setIsPackageModalVisible(false);
+                fetchCustomPackages();
+              }}
               leadId={contact.id}
             />
           </>
@@ -179,6 +182,15 @@ const ChatInfo = ({
         );
       default:
         return null;
+    }
+  };
+
+  const fetchCustomPackages = async () => {
+    try {
+      const response = await axios.get(`/api/custom-umrah/leads/${contact.id}`);
+      // Handle the response data
+    } catch (error) {
+      message.error('Failed to fetch custom packages');
     }
   };
 

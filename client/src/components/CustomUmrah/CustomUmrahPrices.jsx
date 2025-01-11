@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, InputNumber, Typography } from 'antd';
 
 const { Text } = Typography;
 
 const CustomUmrahPrices = ({ data, onChange }) => {
   const [form] = Form.useForm();
+  const [priceData, setPriceData] = useState({
+    quotation_amount: '',
+    buying_amount: ''
+    // profit is auto-generated
+  });
 
   const handleValuesChange = (_, allValues) => {
     const profit = (allValues.quotation_amount || 0) - (allValues.buying_amount || 0);
