@@ -7,7 +7,9 @@ const router = express.Router();
 // Get all leads
 router.get('/leads', async (req, res) => {
   try {
+    const { search } = req.query;
     const leads = await LeadModel.findAll({
+      search: search,
       include: [
         { model: ProductModel, attributes: ['product_name'] },
         { model: StageModel, attributes: ['stage_name'] },

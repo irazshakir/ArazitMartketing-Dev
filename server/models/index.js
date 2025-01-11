@@ -1,5 +1,8 @@
 import supabase from '../config/database.js';
 import jwt from 'jsonwebtoken';
+import CustomUmrahHotelModel from './CustomUmrahHotelModel.js';
+import CustomUmrahServiceModel from './CustomUmrahServiceModel.js';
+import CustomUmrahPriceModel from './CustomUmrahPriceModel.js';
 
 
 
@@ -84,9 +87,9 @@ export const UserModel = {
 };
 
 export const LeadModel = {
-  findAll: async () => {
+  findAll: async ({ search, include } = {}) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('leads')
         .select(`
           *,
@@ -95,6 +98,16 @@ export const LeadModel = {
           lead_sources!lead_source_id(lead_source_name),
           users!assigned_user(name)
         `);
+      
+      if (search && search.trim()) {
+        query = query.or([
+          `name.ilike.%${search}%`,
+          `phone.ilike.%${search}%`,
+          `email.ilike.%${search}%`
+        ].join(','));
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     } catch (error) {
@@ -272,5 +285,11 @@ export const SessionModel = {
       throw error;
     }
   }
+};
+
+export {
+  CustomUmrahHotelModel,
+  CustomUmrahServiceModel,
+  CustomUmrahPriceModel
 };
 
