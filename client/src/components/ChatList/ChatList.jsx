@@ -1,9 +1,17 @@
 import React from 'react';
 import { List, Avatar, Typography, Space, Badge } from 'antd';
-import { WhatsAppOutlined, CopyOutlined } from '@ant-design/icons';
+import { WhatsAppOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import './ChatList.styles.css';
 
+const { Text } = Typography;
+
 const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    return dayjs(timestamp).format('HH:mm A');
+  };
+
   return (
     <List
       className="chat-list"
@@ -19,53 +27,43 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
               <Avatar 
                 className="chat-avatar"
                 style={{ 
-                  backgroundColor: chat.avatarColor || '#f56a00',
+                  backgroundColor: '#ff4d4f',
+                  color: '#fff'
                 }}
               >
                 {chat.name?.substring(0, 2).toUpperCase()}
               </Avatar>
             }
             title={
-              <Space align="center" className="chat-title">
-                <Typography.Text strong>{chat.name}</Typography.Text>
-                <Typography.Text type="secondary" className="chat-time">
-                  {chat.time}
-                </Typography.Text>
-                <Space>
-                  {chat.whatsapp && (
-                    <WhatsAppOutlined className="whatsapp-icon" />
-                  )}
-                  {chat.copied && (
-                    <Badge dot>
-                      <CopyOutlined className="copy-icon" />
-                    </Badge>
-                  )}
-                </Space>
-              </Space>
+              <div className="chat-header">
+                <div className="chat-title-container">
+                  <Text strong className="chat-name">{chat.name}</Text>
+                  <Text type="secondary" className="chat-time">
+                    {formatTime(chat.time)}
+                  </Text>
+                </div>
+                <WhatsAppOutlined className="whatsapp-icon" />
+              </div>
             }
             description={
-              <Space direction="vertical" size={2}>
-                <Typography.Text className="chat-message">
+              <div className="chat-description">
+                <Text className="chat-message">
                   {chat.lastMessage}
-                </Typography.Text>
-                {chat.agent && (
-                  <Space size={4}>
+                </Text>
+                {chat.assigned_user_name && (
+                  <div className="agent-info">
                     <Avatar 
                       size="small" 
                       className="agent-avatar"
-                      style={{
-                        backgroundColor: '#ffd6e7',
-                        color: '#eb2f96'
-                      }}
                     >
-                      {chat.agent.substring(0, 1)}
+                      {chat.assigned_user_name.charAt(0)}
                     </Avatar>
-                    <Typography.Text type="secondary" className="agent-name">
-                      {chat.agent}
-                    </Typography.Text>
-                  </Space>
+                    <Text type="secondary" className="agent-name">
+                      {chat.assigned_user_name}
+                    </Text>
+                  </div>
                 )}
-              </Space>
+              </div>
             }
           />
         </List.Item>

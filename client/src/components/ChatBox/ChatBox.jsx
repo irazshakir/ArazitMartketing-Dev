@@ -213,11 +213,6 @@ const ChatBox = ({
           activeKey={activeTab}
           onChange={setActiveTab}
           className={styles.tabs}
-          style={{
-            '& .ant-tabs-ink-bar': {
-              backgroundColor: theme.colors.primary
-            }
-          }}
         >
           <TabPane tab="Reply" key="reply">
             <div className={styles.messageInput}>

@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, message, Spin } from 'antd';
+import { Layout, Typography, message, Spin, Select, Avatar } from 'antd';
+import { WhatsAppOutlined, UserOutlined } from '@ant-design/icons';
 import ChatList from '../../components/ChatList/ChatList';
 import ChatBox from '../../components/ChatBox/ChatBox';
 import ChatInfo from '../../components/ChatInfo/ChatInfo';
 import styles from './Conversations.module.css';
 import axios from 'axios';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { Content, Sider } = Layout;
 
 const Conversations = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState([]);
 
   // Fetch active leads
   useEffect(() => {
@@ -28,12 +32,12 @@ const Conversations = () => {
         const formattedLeads = response.data.map(lead => ({
           id: lead.id,
           name: lead.name,
-          time: lead.created_at, // Or last_updated if available
+          time: lead.created_at,
           lastMessage: lead.last_message || 'No messages yet',
-          agent: lead.assigned_user_name,
-          avatarColor: '#f56a00', // You can generate random colors or use a mapping
-          whatsapp: true, // If you have this info in lead data
-          copied: lead.is_copied // If you have this info in lead data
+          assigned_user_name: lead.users?.name,
+          assigned_user: lead.assigned_user,
+          avatarColor: '#ff4d4f',
+          whatsapp: true
         }));
 
         setLeads(formattedLeads);
@@ -78,6 +82,20 @@ const Conversations = () => {
     fetchCurrentUser();
   }, []);
 
+  // Add users fetch effect from Edit.jsx
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('/api/users');
+        setUsers(response.data);
+      } catch (error) {
+        message.error('Failed to fetch users');
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   const handleChatSelect = async (chat) => {
     try {
       // Fetch detailed lead information when selected
@@ -119,6 +137,25 @@ const Conversations = () => {
     }
   };
 
+  // Add handleAssigneeChange method from Edit.jsx
+  const handleAssigneeChange = async (userId) => {
+    try {
+      const response = await axios.patch(`/api/leads/assign/${selectedChat.id}`, { 
+        assigned_user: userId
+      });
+      
+      if (response.data) {
+        setSelectedChat(prev => ({
+          ...prev,
+          assigned_user: userId
+        }));
+        message.success('Lead assigned successfully');
+      }
+    } catch (error) {
+      message.error('Failed to assign lead');
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -129,23 +166,47 @@ const Conversations = () => {
 
   return (
     <Layout className={styles.conversationsLayout}>
-      <div className={styles.chatListContainer}>
+      <Sider width={350} className={styles.chatListSider}>
         <Title level={4}>Conversations</Title>
         <ChatList 
           chats={leads}
           onChatSelect={handleChatSelect}
           selectedChatId={selectedChat?.id}
         />
-      </div>
+      </Sider>
 
-      <div className={styles.chatBoxContainer}>
+      <Content className={styles.chatBoxSection}>
         {selectedChat ? (
-          <ChatBox
-            onSendMessage={handleSendMessage}
-            onAddNote={handleAddNote}
-            currentAssignee={selectedChat.assigned_user}
-            id={selectedChat.id}
-          />
+          <>
+            <div className={styles.chatHeader}>
+              <div className={styles.clientInfo}>
+                <Avatar size={32}>{selectedChat.name?.[0]}</Avatar>
+                <div className={styles.clientName}>
+                  <Text strong>{selectedChat.name}</Text>
+                  <WhatsAppOutlined className={styles.whatsappIcon} />
+                </div>
+              </div>
+              <Select
+                placeholder="Assign to"
+                value={selectedChat.assigned_user}
+                onChange={handleAssigneeChange}
+                style={{ width: 200 }}
+                suffixIcon={<UserOutlined />}
+              >
+                {users?.map(user => (
+                  <Option key={user.id} value={user.id}>
+                    {user.name}
+                  </Option>
+                ))}
+              </Select>
+            </div>
+            <ChatBox
+              onSendMessage={handleSendMessage}
+              onAddNote={handleAddNote}
+              currentAssignee={selectedChat.assigned_user}
+              id={selectedChat.id}
+            />
+          </>
         ) : (
           <div className={styles.noChatSelected}>
             <Typography.Text type="secondary">
@@ -153,9 +214,9 @@ const Conversations = () => {
             </Typography.Text>
           </div>
         )}
-      </div>
+      </Content>
 
-      <div className={styles.chatInfoContainer}>
+      <Sider width={350} className={styles.chatInfoSider}>
         {selectedChat && (
           <ChatInfo
             contact={{
@@ -175,7 +236,7 @@ const Conversations = () => {
             }}
           />
         )}
-      </div>
+      </Sider>
     </Layout>
   );
 };
