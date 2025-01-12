@@ -20,6 +20,11 @@ h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-d
   line-height: 1.5;
 }
 
+:where(.css-dev-only-do-not-override-161f05s).ant-input-outlined:hover {
+  border-color: #aa2478;
+  background-color: #ffffff;
+}
+
 .custom-tabs .ant-tabs-tab:hover {
   color: #aa2478 !important;
 }

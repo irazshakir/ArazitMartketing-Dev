@@ -23,6 +23,8 @@ import Products from './pages/Settings/products';
 import Stages from './pages/Settings/stages';
 import LeadSources from './pages/Settings/LeadSources';
 import LeadEdit from './pages/Leads/Edit';
+import Invoices from './pages/Invoices/Index';
+import Accounts from './pages/Accounts/Index';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -101,7 +103,10 @@ function App() {
         <Route path="leads/:id" element={<LeadEdit />} />
         <Route path="conversations" element={<Conversations />} />
         
-        {/* Add the settings route */}
+        {/* Add the invoices route here */}
+        <Route path="invoices" element={<Invoices />} />
+        
+        {/* Settings routes */}
         <Route path="settings">
           <Route path="general" element={<GeneralSettings />} />
           <Route path="products" element={<Products />} />
@@ -117,6 +122,8 @@ function App() {
           <Route path="teams" element={<Teams />} />
           <Route path="roles" element={<Roles />} />
         </Route>
+        
+        <Route path="accounts" element={<Accounts />} />
         
         {/* ... other admin routes ... */}
       </Route>

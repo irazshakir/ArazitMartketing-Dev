@@ -1,0 +1,98 @@
+.invoice-container {
+  padding: 24px;
+  background: #fff;
+  min-width: 800px;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.left-section {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.logo-section {
+  margin-bottom: 20px;
+}
+
+.company-logo {
+  height: 60px;
+  margin-bottom: 10px;
+}
+
+.right-section {
+  width: 300px;
+  text-align: right;
+}
+
+.right-section h2 {
+  margin-bottom: 24px;
+  color: #aa2478;
+}
+
+.right-section .ant-form {
+  text-align: left;
+}
+
+.items-table {
+  margin: 20px 0;
+}
+
+.add-item-btn {
+  margin-bottom: 20px;
+}
+
+.invoice-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.totals-section {
+  width: 300px;
+}
+
+.amount-fields {
+  margin-bottom: 20px;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px 0;
+  border-top: 2px solid #f0f0f0;
+}
+
+/* Form styling */
+.ant-form-item {
+  margin-bottom: 16px;
+}
+
+/* Make sure inputs and date pickers have consistent width */
+.ant-input, .ant-picker {
+  width: 100%;
+}
+
+/* Style the table inputs */
+.items-table .ant-input {
+  border: none;
+  background: transparent;
+}
+
+.items-table .ant-table-cell {
+  padding: 8px 16px;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+} 

@@ -1,5 +1,55 @@
+.chat-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.search-filter-section {
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-input {
+  border-radius: 4px;
+}
+
+.filter-icon {
+  font-size: 16px;
+  color: #8c8c8c;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.filter-icon:hover {
+  color: #1890ff;
+}
+
+.chat-tabs {
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-tabs .ant-tabs-nav {
+  margin: 0;
+  padding: 0 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.chat-tabs .ant-tabs-tab {
+  padding: 8px 16px;
+  margin: 0 !important;
+}
+
+.chat-tabs .ant-tabs-tab-active {
+  background: #e6f7ff;
+}
+
 .chat-list {
-  height: calc(100vh - 70px);
+  height: calc(100vh - 170px);
   overflow-y: auto;
   overflow-x: hidden;
 }

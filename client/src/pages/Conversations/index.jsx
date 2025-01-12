@@ -167,7 +167,6 @@ const Conversations = () => {
   return (
     <Layout className={styles.conversationsLayout}>
       <Sider width={350} className={styles.chatListSider}>
-        <Title level={4}>Conversations</Title>
         <ChatList 
           chats={leads}
           onChatSelect={handleChatSelect}
