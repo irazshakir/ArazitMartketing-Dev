@@ -64,7 +64,7 @@ const InvoiceModel = {
     }
   },
 
-  findAll: async ({ search } = {}) => {
+  findAll: async ({ search, timeRange, startDate, endDate, status } = {}) => {
     try {
       let query = supabase
         .from('invoices')
@@ -73,17 +73,58 @@ const InvoiceModel = {
           invoice_items (*)
         `);
 
-      if (search) {
+      // Add search filter if provided
+      if (search && search.trim()) {
         query = query.or(`
-          invoice_number.ilike.%${search}%,
-          bill_to.ilike.%${search}%
+          bill_to.ilike.%${search.trim()}%,
+          invoice_number.ilike.%${search.trim()}%
         `);
       }
 
+      // Add status filter if provided
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      // Handle date filtering
+      if (timeRange) {
+        const now = new Date();
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        if (timeRange === 'currMonth') {
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          
+          query = query
+            .gte('created_date', formatDate(firstDayOfMonth))
+            .lte('created_date', formatDate(lastDayOfMonth));
+        } 
+        else if (timeRange === 'prevMonth') {
+          const firstDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+          
+          query = query
+            .gte('created_date', formatDate(firstDayOfPrevMonth))
+            .lte('created_date', formatDate(lastDayOfPrevMonth));
+        }
+      }
+      // Handle custom date range
+      else if (startDate && endDate) {
+        query = query
+          .gte('created_date', startDate)
+          .lte('created_date', endDate);
+      }
+
       const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      return data || [];
     } catch (error) {
+      console.error('Error in findAll:', error);
       throw error;
     }
   },
@@ -125,35 +166,47 @@ const InvoiceModel = {
 
   addPayment: async (invoiceId, paymentData) => {
     try {
-      // Get current invoice
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
         .select('total_amount, amount_received')
         .eq('id', invoiceId)
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) throw new Error('Failed to fetch invoice details');
+      if (!invoice) throw new Error('Invoice not found');
 
-      const newAmountReceived = invoice.amount_received + Number(paymentData.amount);
-      const remainingAmount = invoice.total_amount - newAmountReceived;
-      const status = remainingAmount === 0 ? 'PAID' : 'PARTIALLY_PAID';
+      const currentAmountReceived = Number(invoice.amount_received) || 0;
+      const paymentAmount = Number(paymentData.amount) || 0;
+      const totalAmount = Number(invoice.total_amount) || 0;
 
-      // Create payment record
+      const newAmountReceived = currentAmountReceived + paymentAmount;
+      const remainingAmount = totalAmount - newAmountReceived;
+
+      if (newAmountReceived > totalAmount) {
+        throw new Error('Payment amount exceeds invoice total');
+      }
+
+      let status = 'Pending';
+      if (remainingAmount === 0) {
+        status = 'Paid';
+      } else if (newAmountReceived > 0) {
+        status = 'Partially Paid';
+      }
+
       const { data: payment, error: paymentError } = await supabase
         .from('payment_history')
         .insert([{
           invoice_id: invoiceId,
-          amount: paymentData.amount,
+          amount: paymentAmount,
           payment_type: paymentData.paymentType,
           payment_date: paymentData.paymentDate,
           remaining_amount: remainingAmount,
-          payment_notes: paymentData.notes
+          payment_notes: paymentData.notes || null
         }])
         .select();
 
-      if (paymentError) throw paymentError;
+      if (paymentError) throw new Error('Failed to create payment record');
 
-      // Update invoice
       const { error: updateError } = await supabase
         .from('invoices')
         .update({
@@ -163,9 +216,49 @@ const InvoiceModel = {
         })
         .eq('id', invoiceId);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error('Failed to update invoice');
 
-      return payment;
+      const { data: updatedInvoice, error: fetchError } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .single();
+
+      if (fetchError) throw new Error('Failed to fetch updated invoice');
+
+      return {
+        payment: payment[0],
+        invoice: updatedInvoice
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getInvoiceItems: async (invoiceId) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoice_items')
+        .select('*')
+        .eq('invoice_id', invoiceId);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getPaymentHistory: async (invoiceId) => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_history')
+        .select('*')
+        .eq('invoice_id', invoiceId)
+        .order('payment_date', { ascending: false });
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       throw error;
     }

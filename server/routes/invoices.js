@@ -22,10 +22,19 @@ router.post('/invoices', async (req, res) => {
 // Get all invoices
 router.get('/invoices', async (req, res) => {
   try {
-    const { search } = req.query;
-    const invoices = await InvoiceModel.findAll({ search });
+    const { search, timeRange, startDate, endDate, status } = req.query;
+    
+    const invoices = await InvoiceModel.findAll({ 
+      search: search ? search.trim() : null,
+      timeRange,
+      startDate,
+      endDate,
+      status 
+    });
+    
     res.json(invoices);
   } catch (error) {
+    console.error('Route error:', error);
     res.status(500).json({ 
       message: 'Error fetching invoices', 
       error: error.message 
@@ -52,11 +61,53 @@ router.get('/invoices/:id', async (req, res) => {
 // Add payment to invoice
 router.post('/invoices/:id/payments', async (req, res) => {
   try {
+    if (!req.params.id) {
+      return res.status(400).json({
+        message: 'Invoice ID is required'
+      });
+    }
+
+    if (!req.body.amount || !req.body.paymentType || !req.body.paymentDate) {
+      return res.status(400).json({
+        message: 'Amount, payment type, and payment date are required'
+      });
+    }
+
     const payment = await InvoiceModel.addPayment(req.params.id, req.body);
-    res.status(201).json(payment);
+    
+    res.status(201).json({
+      message: 'Payment added successfully',
+      data: payment
+    });
   } catch (error) {
     res.status(500).json({ 
       message: 'Error adding payment', 
+      error: error.message
+    });
+  }
+});
+
+// Get invoice items
+router.get('/invoices/:id/items', async (req, res) => {
+  try {
+    const items = await InvoiceModel.getInvoiceItems(req.params.id);
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error fetching invoice items', 
+      error: error.message 
+    });
+  }
+});
+
+// Get invoice payment history
+router.get('/invoices/:id/payments', async (req, res) => {
+  try {
+    const payments = await InvoiceModel.getPaymentHistory(req.params.id);
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error fetching payment history', 
       error: error.message 
     });
   }
