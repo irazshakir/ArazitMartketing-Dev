@@ -5,6 +5,7 @@ import UniversalTable from '../../components/UniversalTable';
 import ActionDropdown from '../../components/ActionDropdown';
 import InvoiceModel from '../../components/InvoiceModel/InvoiceModel';
 import EditInvoice from './EditInvoice';
+import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
@@ -22,11 +23,37 @@ const Invoices = () => {
   });
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(null);
+
+  const statusOptions = [
+    { value: 'Paid', label: 'Paid' },
+    { value: 'Partially Paid', label: 'Partially Paid' },
+    { value: 'Pending', label: 'Pending' }
+  ];
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/invoices?search=${searchQuery}`);
+      let queryParams = new URLSearchParams();
+
+      if (searchQuery) {
+        queryParams.append('search', searchQuery);
+      }
+
+      if (timeRange) {
+        queryParams.append('timeRange', timeRange);
+      }
+
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        queryParams.append('startDate', dateRange[0].format('YYYY-MM-DD'));
+        queryParams.append('endDate', dateRange[1].format('YYYY-MM-DD'));
+      }
+
+      if (statusFilter) {
+        queryParams.append('status', statusFilter);
+      }
+
+      const response = await fetch(`http://localhost:5000/api/invoices?${queryParams}`);
       if (!response.ok) throw new Error('Failed to fetch invoices');
       
       const data = await response.json();
@@ -49,7 +76,7 @@ const Invoices = () => {
 
   useEffect(() => {
     fetchInvoices();
-  }, [searchQuery, timeRange, dateRange]);
+  }, [searchQuery, timeRange, dateRange, statusFilter]);
 
   const columns = [
     {
@@ -78,6 +105,18 @@ const Invoices = () => {
       title: 'INVOICE#',
       dataIndex: 'invoice_number',
       key: 'invoice_number',
+    },
+    {
+      title: 'CREATED DATE',
+      dataIndex: 'created_date',
+      key: 'created_date',
+      render: (date) => dayjs(date).format('DD/MM/YYYY'),
+    },
+    {
+      title: 'DUE DATE',
+      dataIndex: 'due_date',
+      key: 'due_date',
+      render: (date) => dayjs(date).format('DD/MM/YYYY'),
     },
     {
       title: 'RECEIVED',
@@ -122,14 +161,18 @@ const Invoices = () => {
 
   const handleTimeRangeChange = (value) => {
     setTimeRange(value);
+    setDateRange(null);
   };
 
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
+    setTimeRange(null);
   };
 
   const handleSearch = (value) => {
     setSearchQuery(value);
+    setTimeRange(null);
+    setDateRange(null);
   };
 
   const handleModalOpen = () => {
@@ -156,6 +199,10 @@ const Invoices = () => {
     message.info('Delete functionality coming soon');
   };
 
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -180,14 +227,19 @@ const Invoices = () => {
             onChange={handleTimeRangeChange}
             style={{ width: 200 }}
             options={[
-              { value: '7days', label: 'Past 7 Days' },
-              { value: '30days', label: 'Past 30 Days' },
-              { value: '90days', label: 'Past 90 Days' },
-              { value: 'prevMonth', label: 'Previous Month' },
               { value: 'currMonth', label: 'Current Month' },
+              { value: 'prevMonth', label: 'Previous Month' },
             ]}
           />
           <RangePicker onChange={handleDateRangeChange} />
+          <Select
+            placeholder="Filter by Status"
+            value={statusFilter}
+            onChange={handleStatusChange}
+            style={{ width: 200 }}
+            allowClear
+            options={statusOptions}
+          />
         </Space>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -226,7 +278,8 @@ const Invoices = () => {
         dataSource={invoices}
         loading={loading}
         onSearch={handleSearch}
-        searchPlaceholder="Search invoices..."
+        searchPlaceholder="Search by name or invoice number..."
+        searchValue={searchQuery}
       />
 
       <Modal

@@ -15,10 +15,10 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
   const [items, setItems] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
-    if (invoice) {
-      // Set initial form values
+    if (invoice && invoice.id) {
       form.setFieldsValue({
         invoiceNumber: invoice.invoice_number,
         billTo: invoice.bill_to,
@@ -27,33 +27,75 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
         notes: invoice.notes,
       });
       
-      // Fetch items and payment history
-      fetchInvoiceItems();
-      fetchPaymentHistory();
+      // Use items directly from invoice object
+      if (invoice.invoice_items) {
+        const formattedItems = invoice.invoice_items.map(item => ({
+          key: item.id,
+          serviceName: item.service_name,
+          description: item.description,
+          amount: Number(item.amount),
+        }));
+        setItems(formattedItems);
+        
+        // Calculate total from items
+        const total = formattedItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        setTotalAmount(total);
+      }
+      
+      // Use payment history from invoice if available
+      if (invoice.payment_history) {
+        setPaymentHistory(invoice.payment_history);
+      } else {
+        fetchPaymentHistory();
+      }
     }
   }, [invoice]);
 
   const fetchInvoiceItems = async () => {
     try {
+      if (!invoice || !invoice.id) return;
+      
+      console.log('Fetching items for invoice:', invoice.id);
+      
       const response = await fetch(`http://localhost:5000/api/invoices/${invoice.id}/items`);
+      if (!response.ok) {
+        console.error('Response status:', response.status);
+        throw new Error('Failed to fetch invoice items');
+      }
+      
       const data = await response.json();
-      setItems(data.map((item, index) => ({
-        key: index,
+      console.log('Received items:', data);
+      
+      const formattedItems = data.map(item => ({
+        key: item.id,
         serviceName: item.service_name,
         description: item.description,
-        amount: item.amount,
-      })));
+        amount: Number(item.amount),
+      }));
+      
+      setItems(formattedItems);
+      
+      // Calculate total from items
+      const total = formattedItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      setTotalAmount(total);
     } catch (error) {
+      console.error('Error fetching items:', error);
       message.error('Failed to fetch invoice items');
     }
   };
 
   const fetchPaymentHistory = async () => {
     try {
+      if (!invoice || !invoice.id) return;
+      
       const response = await fetch(`http://localhost:5000/api/invoices/${invoice.id}/payments`);
+      if (!response.ok) throw new Error('Failed to fetch payment history');
+      
       const data = await response.json();
+      console.log('Payment history:', data); // Debug log
       setPaymentHistory(data);
     } catch (error) {
+      console.error('Error fetching payment history:', error);
       message.error('Failed to fetch payment history');
     }
   };
@@ -138,6 +180,10 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
     const newItems = [...items];
     newItems[index][field] = value;
     setItems(newItems);
+    
+    // Recalculate total whenever items change
+    const newTotal = newItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    setTotalAmount(newTotal);
   };
 
   const addItem = () => {
@@ -147,10 +193,6 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
       description: '',
       amount: '',
     }]);
-  };
-
-  const calculateTotal = () => {
-    return items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
   };
 
   const paymentColumns = [
@@ -307,7 +349,7 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
                 </div>
                 <div className="summary-row total">
                   <span>Total:</span>
-                  <span className="amount">PKR {calculateTotal().toFixed(2)}</span>
+                  <span className="amount">PKR {totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -333,12 +375,16 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
 
         <AddPaymentModal
           visible={isPaymentModalVisible}
-          onClose={() => setIsPaymentModalVisible(false)}
+          onClose={() => {
+            setIsPaymentModalVisible(false);
+            form.resetFields();
+          }}
           invoiceId={invoice?.id}
           remainingAmount={invoice?.remaining_amount}
           onSuccess={() => {
             fetchPaymentHistory();
             onUpdate();
+            setIsPaymentModalVisible(false);
           }}
         />
       </div>
