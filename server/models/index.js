@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import CustomUmrahHotelModel from './CustomUmrahHotelModel.js';
 import CustomUmrahServiceModel from './CustomUmrahServiceModel.js';
 import CustomUmrahPriceModel from './CustomUmrahPriceModel.js';
+import InvoiceModel from './InvoiceModel.js';
 
 
 
@@ -147,6 +148,16 @@ export const LeadModel = {
       const { data: updatedLead, error } = await supabase
         .from('leads')
         .update({
+          phone: data.phone,
+          email: data.email,
+          lead_product: data.lead_product,
+          lead_stage: data.lead_stage,
+          lead_source_id: data.lead_source_id,
+          fu_date: data.fu_date,
+          fu_hour: data.fu_hour,
+          fu_minutes: data.fu_minutes,
+          fu_period: data.fu_period,
+          lead_active_status: data.lead_active_status,
           assigned_user: data.assigned_user,
           updated_at: new Date().toISOString()
         })
@@ -290,6 +301,7 @@ export const SessionModel = {
 export {
   CustomUmrahHotelModel,
   CustomUmrahServiceModel,
-  CustomUmrahPriceModel
+  CustomUmrahPriceModel,
+  InvoiceModel
 };
 
