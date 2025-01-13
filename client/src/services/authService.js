@@ -22,7 +22,14 @@ export const authService = {
         throw new Error('Your account is inactive. Please contact administrator.');
       }
 
-      // 4. Create session in database
+      // 4. Deactivate any existing active sessions for this user
+      await supabase
+        .from('sessions')
+        .update({ is_active: false })
+        .eq('user_id', userData.id)
+        .eq('is_active', true);
+
+      // 5. Create new session
       const { data: sessionData, error: sessionError } = await supabase
         .from('sessions')
         .insert([{
@@ -30,6 +37,7 @@ export const authService = {
           token: Date.now().toString(),
           ip_address: window.clientInformation?.userAgentData?.platform || 'unknown',
           user_agent: navigator.userAgent,
+          is_active: true,
           expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           device_info: {
             platform: window.clientInformation?.userAgentData?.platform,
@@ -42,15 +50,14 @@ export const authService = {
 
       if (sessionError) throw sessionError;
 
-      // 5. Store session in localStorage
+      // 6. Store session and user data
       localStorage.setItem('session', JSON.stringify(sessionData));
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      // 6. Store token separately
-      localStorage.setItem('token', sessionData.token);
-
       return {
         session: sessionData,
-        userData
+        userData,
+        token: sessionData.token
       };
     } catch (error) {
       console.error('Sign in error:', error);
@@ -68,13 +75,14 @@ export const authService = {
         await supabase
           .from('sessions')
           .update({ 
-            is_active: false,
+            is_active: false, // Using boolean false
             last_activity_at: new Date().toISOString()
           })
           .eq('id', session.id);
       }
 
       localStorage.removeItem('session');
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Sign out error:', error);
       throw new Error(error.message || 'Failed to sign out');
@@ -84,51 +92,38 @@ export const authService = {
   async getCurrentUser() {
     try {
       const sessionStr = localStorage.getItem('session');
-      if (!sessionStr) return null;
+      const userStr = localStorage.getItem('user');
+      
+      if (!sessionStr || !userStr) return null;
 
       const session = JSON.parse(sessionStr);
+      const userData = JSON.parse(userStr);
       
       // Check if session exists and is active in database
       const { data: sessionData, error: sessionError } = await supabase
         .from('sessions')
-        .select('*, users(*, roles(*))')
+        .select('*')
         .eq('id', session.id)
         .eq('is_active', true)
         .single();
 
       if (sessionError || !sessionData) {
+        // Clear local storage if session is invalid
         localStorage.removeItem('session');
+        localStorage.removeItem('user');
         return null;
       }
 
-      // Check if session is expired
-      if (new Date(sessionData.expires_at) < new Date()) {
-        // Update session status in database
-        await supabase
-          .from('sessions')
-          .update({ 
-            is_active: false,
-            last_activity_at: new Date().toISOString()
-          })
-          .eq('id', session.id);
-
-        localStorage.removeItem('session');
-        return null;
-      }
-
-      // Update last activity
-      await supabase
-        .from('sessions')
-        .update({ last_activity_at: new Date().toISOString() })
-        .eq('id', session.id);
-
+      // Return the stored user data if session is valid
       return {
         session: sessionData,
-        userData: sessionData.users
+        userData: userData
       };
     } catch (error) {
       console.error('Get current user error:', error);
-      throw new Error(error.message || 'Failed to get current user');
+      localStorage.removeItem('session');
+      localStorage.removeItem('user');
+      return null;
     }
   },
 

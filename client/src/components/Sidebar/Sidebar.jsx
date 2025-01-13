@@ -36,15 +36,15 @@ const Sidebar = () => {
   }, []);
 
   const getUserRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*, roles(*)')
-        .eq('email', session.user.email)
-        .single();
-      
-      setUserRole(userData?.roles?.role_name);
+    try {
+      // Get user data from localStorage instead of making a new Supabase query
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        setUserRole(userData.roles.role_name);
+      }
+    } catch (error) {
+      console.error('Error getting user role:', error);
     }
   };
 
