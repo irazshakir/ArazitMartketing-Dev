@@ -15,6 +15,8 @@ import {
 import styles from './ChatBox.module.css';
 import theme from '../../theme';
 import axios from 'axios';
+import io from 'socket.io-client';
+import { BACKEND_URL } from '../../constants/config';
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -50,6 +52,8 @@ const ChatBox = ({
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [socket, setSocket] = useState(null);
 
   // Fetch active users
   useEffect(() => {
@@ -144,24 +148,53 @@ const ChatBox = ({
     });
   };
 
+  useEffect(() => {
+    const newSocket = io(BACKEND_URL);
+    setSocket(newSocket);
+
+    newSocket.on('new_whatsapp_message', (message) => {
+      console.log('ChatBox received message:', message);
+      setMessages(prev => [...prev, {
+        message: message.message,
+        timestamp: message.timestamp,
+        isOutgoing: false,
+        from: message.from
+      }]);
+    });
+
+    return () => newSocket.close();
+  }, []);
+
+  // Fetch existing messages when chat is selected
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (id) {
+        try {
+          const response = await axios.get(`/api/webhook/messages/${id}`);
+          if (response.data.success) {
+            setMessages(response.data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        }
+      }
+    };
+
+    fetchMessages();
+  }, [id]);
+
   const renderMessages = () => {
-    return notes.map((note, index) => (
+    return messages.map((message, index) => (
       <div 
         key={index}
-        className={`${styles.messageContainer} ${note.users?.name === 'admin' ? styles.sentMessage : ''}`}
+        className={`${styles.messageContainer} ${message.isOutgoing ? styles.sentMessage : ''}`}
       >
-        <div className={styles.avatarContainer}>
-          <Avatar size={22} style={{ backgroundColor: '#f56a00' }}>
-            {note.users?.name?.charAt(0).toUpperCase() || 'U'}
-          </Avatar>
-        </div>
-        <div className={styles.messageContent}>
-          <div className={styles.messageBubble}>
-            <div className={styles.messageText}>{note.note}</div>
-            <div className={styles.messageFooter}>
-              <span className={styles.userName}>{note.users?.name || 'Unknown'}</span>
-              <span className={styles.messageTime}>{formatDate(note.created_at)}</span>
-            </div>
+        <div className={styles.messageBubble}>
+          <div className={styles.messageText}>{message.message}</div>
+          <div className={styles.messageFooter}>
+            <span className={styles.messageTime}>
+              {new Date(message.timestamp * 1000).toLocaleString()}
+            </span>
           </div>
         </div>
       </div>

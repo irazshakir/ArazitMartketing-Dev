@@ -1,0 +1,148 @@
+.dashboard-container {
+  padding: 24px;
+}
+
+.achievement-content {
+  padding: 24px;
+}
+
+.achievement-main {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.achievement-number {
+  font-size: 48px;
+  margin: 0;
+  color: #333;
+}
+
+.achievement-text {
+  color: rgba(0, 0, 0, 0.45);
+  margin: 8px 0;
+}
+
+.achievement-target {
+  font-size: 32px;
+  color: #666;
+  margin: 0;
+}
+
+.achievement-stats {
+  display: flex;
+  justify-content: space-between;
+  margin: 32px 0;
+  padding: 0 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon {
+  font-size: 24px;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.stat-icon.active {
+  color: #28C76F;
+  background-color: rgba(40, 199, 111, 0.1);
+}
+
+.stat-icon.hot {
+  color: #FF4D4F;
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+.stat-icon.sales {
+  color: #7367F0;
+  background-color: rgba(115, 103, 240, 0.1);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.conversion-ratio {
+  text-align: right;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.conversion-ratio h3 {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+}
+
+.ratio-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.target-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manage-target-btn {
+  font-size: 14px;
+  padding: 4px 12px;
+  height: auto;
+  background-color: #f6f6f6;
+  border-color: transparent;
+  color: #28C76F;
+}
+
+.dashboard-filters {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-group label {
+  color: rgba(0, 0, 0, 0.65);
+  font-weight: 500;
+}
+
+.time-select {
+  .ant-select-selector {
+    padding: 0 !important;
+  }
+}
+
+.ant-select-selector {
+  border-radius: 6px !important;
+}
+
+.ant-picker {
+  border-radius: 6px;
+} 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { List, Avatar, Typography, Space, Badge, Input, Tooltip, Tabs } from 'antd';
 import { 
   WhatsAppOutlined, 
@@ -13,12 +13,47 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import './ChatList.styles.css';
+import io from 'socket.io-client';
+import { BACKEND_URL } from '../../constants/config';
 
 const { Text } = Typography;
 const { TabPane } = Tabs;
 
 const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
   const [activeTab, setActiveTab] = useState('unassigned');
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io(BACKEND_URL);
+    setSocket(newSocket);
+
+    newSocket.on('new_whatsapp_message', (message) => {
+      console.log('New message received:', message);
+      setUnreadCounts(prev => ({
+        ...prev,
+        [message.from]: (prev[message.from] || 0) + 1
+      }));
+
+      const existingChat = chats.find(chat => chat.phone === message.from);
+      if (!existingChat) {
+        const newChat = {
+          id: message.from,
+          name: `New Chat (${message.from})`,
+          phone: message.from,
+          time: message.timestamp,
+          lastMessage: message.message,
+          whatsapp: true
+        };
+        chats.unshift(newChat);
+      } else {
+        existingChat.lastMessage = message.message;
+        existingChat.time = message.timestamp;
+      }
+    });
+
+    return () => newSocket.close();
+  }, [chats]);
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
@@ -58,6 +93,58 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     }
   ];
 
+  const renderItem = (chat) => (
+    <List.Item 
+      className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
+      onClick={() => {
+        onChatSelect(chat);
+        setUnreadCounts(prev => ({
+          ...prev,
+          [chat.id]: 0
+        }));
+      }}
+    >
+      <List.Item.Meta
+        avatar={
+          <Badge count={unreadCounts[chat.id] || 0}>
+            <Avatar>{chat.name?.[0]}</Avatar>
+          </Badge>
+        }
+        title={
+          <div className="chat-header">
+            <div className="chat-title-container">
+              <Text strong className="chat-name">{chat.name}</Text>
+              <Text type="secondary" className="chat-time">
+                {formatTime(chat.time)}
+              </Text>
+            </div>
+            <WhatsAppOutlined className="whatsapp-icon" />
+          </div>
+        }
+        description={
+          <div className="chat-description">
+            <Text className="chat-message">
+              {chat.lastMessage}
+            </Text>
+            {chat.assigned_user_name && (
+              <div className="agent-info">
+                <Avatar 
+                  size="small" 
+                  className="agent-avatar"
+                >
+                  {chat.assigned_user_name.charAt(0)}
+                </Avatar>
+                <Text type="secondary" className="agent-name">
+                  {chat.assigned_user_name}
+                </Text>
+              </div>
+            )}
+          </div>
+        }
+      />
+    </List.Item>
+  );
+
   return (
     <div className="chat-list-container">
       {/* Search and Filter Section */}
@@ -93,57 +180,7 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
               className="chat-list"
               itemLayout="horizontal"
               dataSource={chats}
-              renderItem={(chat) => (
-                <List.Item 
-                  className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
-                  onClick={() => onChatSelect(chat)}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar 
-                        className="chat-avatar"
-                        style={{ 
-                          backgroundColor: '#ff4d4f',
-                          color: '#fff'
-                        }}
-                      >
-                        {chat.name?.substring(0, 2).toUpperCase()}
-                      </Avatar>
-                    }
-                    title={
-                      <div className="chat-header">
-                        <div className="chat-title-container">
-                          <Text strong className="chat-name">{chat.name}</Text>
-                          <Text type="secondary" className="chat-time">
-                            {formatTime(chat.time)}
-                          </Text>
-                        </div>
-                        <WhatsAppOutlined className="whatsapp-icon" />
-                      </div>
-                    }
-                    description={
-                      <div className="chat-description">
-                        <Text className="chat-message">
-                          {chat.lastMessage}
-                        </Text>
-                        {chat.assigned_user_name && (
-                          <div className="agent-info">
-                            <Avatar 
-                              size="small" 
-                              className="agent-avatar"
-                            >
-                              {chat.assigned_user_name.charAt(0)}
-                            </Avatar>
-                            <Text type="secondary" className="agent-name">
-                              {chat.assigned_user_name}
-                            </Text>
-                          </div>
-                        )}
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
+              renderItem={renderItem}
             />
           </TabPane>
         ))}
