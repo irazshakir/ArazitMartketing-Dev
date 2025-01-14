@@ -33,20 +33,35 @@ const ChatInfo = ({
   const [isPackageModalVisible, setIsPackageModalVisible] = useState(false);
 
   useEffect(() => {
-    setFormData({
-      phone: contact.phone,
-      email: contact.email,
-      productId: contact.lead_product,
-      stageId: contact.lead_stage,
-      leadSourceId: contact.lead_source_id,
-      branchId: contact.branch_id,
-      followDate: contact.fu_date,
-      followHour: contact.fu_hour,
-      followMinutes: contact.fu_minutes,
-      followPeriod: contact.fu_period
-    });
-    setIsActive(contact.lead_active_status);
-  }, [contact]);
+    const fetchContactDetails = async () => {
+      try {
+        const response = await axios.get(`/api/leads/${contact.id}`);
+        const leadDetails = response.data;
+        
+        console.log('Fetched lead details:', leadDetails);
+
+        setFormData(prev => ({
+          ...prev,
+          phone: contact.phone || '',
+          email: contact.email || '',
+          productId: contact.lead_product || null,
+          stageId: contact.lead_stage || null,
+          leadSourceId: contact.lead_source_id || null,
+          branchId: leadDetails.branch_id || null,
+          followDate: contact.fu_date || null,
+          followHour: contact.fu_hour || null,
+          followMinutes: contact.fu_minutes || null,
+          followPeriod: contact.fu_period || null
+        }));
+      } catch (error) {
+        console.error('Error fetching lead details:', error);
+      }
+    };
+
+    if (contact.id) {
+      fetchContactDetails();
+    }
+  }, [contact.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,6 +77,8 @@ const ChatInfo = ({
         setStages(stagesRes.data);
         setLeadSources(sourcesRes.data);
         setBranches(branchesRes.data);
+
+        console.log('Fetched branches:', branchesRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -72,26 +89,37 @@ const ChatInfo = ({
 
   const handleUpdate = async () => {
     try {
-      await axios.patch(`/api/leads/${contact.id}`, {
+      const updateData = {
         phone: formData.phone,
         email: formData.email,
         lead_product: formData.productId,
         lead_stage: formData.stageId,
         lead_source_id: formData.leadSourceId,
-        branch_id: formData.branchId,
+        branch_id: formData.branchId ? Number(formData.branchId) : null,
         fu_date: formData.followDate,
         fu_hour: formData.followHour,
         fu_minutes: formData.followMinutes,
         fu_period: formData.followPeriod,
         lead_active_status: isActive
-      });
-      message.success('Lead updated successfully');
+      };
+
+      console.log('Updating lead with data:', updateData);
+      
+      const response = await axios.patch(`/api/leads/${contact.id}`, updateData);
+      
+      if (response.data.success) {
+        message.success('Lead updated successfully');
+      } else {
+        message.warning('Update may not be complete');
+      }
     } catch (error) {
+      console.error('Failed to update lead:', error);
       message.error('Failed to update lead');
     }
   };
 
   const handleInputChange = (field, value) => {
+    console.log(`Updating ${field} with value:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -315,11 +343,18 @@ const ChatInfo = ({
         <Select
           placeholder="Select Branch"
           className={styles.select}
-          value={formData.branchId || undefined}
-          onChange={(value) => handleInputChange('branchId', value)}
+          value={formData.branchId}
+          onChange={(value) => {
+            console.log('Selected branch value:', value);
+            handleInputChange('branchId', value);
+          }}
+          allowClear
         >
           {branches.map(branch => (
-            <Option key={branch.id} value={branch.id}>
+            <Option 
+              key={branch.id} 
+              value={branch.id}
+            >
               {branch.branch_name}
             </Option>
           ))}

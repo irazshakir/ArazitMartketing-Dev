@@ -28,31 +28,52 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     const newSocket = io(BACKEND_URL);
     setSocket(newSocket);
 
+    newSocket.on('connect', () => {
+      console.log('🔌 Socket connected');
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Socket disconnected');
+    });
+
     newSocket.on('new_whatsapp_message', (message) => {
-      console.log('New message received:', message);
-      setUnreadCounts(prev => ({
-        ...prev,
-        [message.from]: (prev[message.from] || 0) + 1
-      }));
+      console.log('📩 New message received in ChatList:', message);
+      console.log('Current chats:', chats);
+
+      setUnreadCounts(prev => {
+        const newCounts = {
+          ...prev,
+          [message.from]: (prev[message.from] || 0) + 1
+        };
+        console.log('Updated unread counts:', newCounts);
+        return newCounts;
+      });
 
       const existingChat = chats.find(chat => chat.phone === message.from);
+      console.log('Existing chat found:', existingChat);
+
       if (!existingChat) {
         const newChat = {
-          id: message.from,
-          name: `New Chat (${message.from})`,
+          id: message.leadId,
+          name: message.name,
           phone: message.from,
           time: message.timestamp,
-          lastMessage: message.message,
+          lastMessage: message.text.body,
           whatsapp: true
         };
+        console.log('Creating new chat:', newChat);
         chats.unshift(newChat);
       } else {
-        existingChat.lastMessage = message.message;
+        console.log('Updating existing chat:', message.from);
+        existingChat.lastMessage = message.text.body;
         existingChat.time = message.timestamp;
       }
     });
 
-    return () => newSocket.close();
+    return () => {
+      console.log('🔌 Closing socket connection');
+      newSocket.close();
+    };
   }, [chats]);
 
   const formatTime = (timestamp) => {

@@ -111,8 +111,30 @@ const Conversations = () => {
   };
 
   const handleSendMessage = async (message) => {
-    // Reuse from Edit.jsx
-    console.log('Sending message:', message);
+    try {
+      if (!selectedChat?.phone) {
+        message.error('No recipient phone number found');
+        return;
+      }
+
+      // Send WhatsApp message
+      const response = await axios.post('/api/webhook/reply', {
+        recipient: selectedChat.phone,
+        text: message,
+        leadId: selectedChat.id  // Add leadId for message storage
+      });
+
+      if (response.data.success) {
+        // Update local state if needed
+        console.log('✅ Message sent successfully');
+      } else {
+        console.error('Failed to send message:', response.data.error);
+        message.error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      message.error('Failed to send message');
+    }
   };
 
   const handleAddNote = async (note) => {
@@ -203,7 +225,8 @@ const Conversations = () => {
               onSendMessage={handleSendMessage}
               onAddNote={handleAddNote}
               currentAssignee={selectedChat.assigned_user}
-              id={selectedChat.id}
+              id={selectedChat?.id}
+              phone={selectedChat?.phone} 
             />
           </>
         ) : (

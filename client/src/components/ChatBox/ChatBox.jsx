@@ -45,7 +45,8 @@ const ChatBox = ({
   placeholder = "Type a message...",
   currentAssignee = null,
   onAssigneeChange,
-  id
+  id,
+  phone
 }) => {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('reply');
@@ -104,15 +105,33 @@ const ChatBox = ({
     if (message.trim()) {
       try {
         if (activeTab === 'reply') {
-          onSendMessage(message);
+          const response = await axios.post(`${BACKEND_URL}/api/webhook/reply`, {
+            recipient: phone,
+            text: message,
+            leadId: id
+          });
+
+          if (response.data.success) {
+            // Add message to local state with consistent format
+            setMessages(prev => [...prev, {
+              id: Date.now(),
+              message: message,
+              timestamp: Date.now() / 1000,
+              is_outgoing: true,
+              phone: phone
+            }]);
+            
+            setMessage('');
+          } else {
+            console.error('Failed to send message:', response.data.error);
+          }
         } else {
-          // Get current user from parent component
+          // Handle notes as before
           await onAddNote(message);
-          // Refresh notes after adding
           const response = await axios.get(`/api/leads/${id}/notes`);
           setNotes(response.data || []);
+          setMessage('');
         }
-        setMessage('');
       } catch (error) {
         console.error('Error sending message:', error);
       }
@@ -152,13 +171,14 @@ const ChatBox = ({
     const newSocket = io(BACKEND_URL);
     setSocket(newSocket);
 
-    newSocket.on('new_whatsapp_message', (message) => {
-      console.log('ChatBox received message:', message);
+    newSocket.on('new_whatsapp_message', (messageData) => {
+      console.log('ChatBox received message:', messageData);
       setMessages(prev => [...prev, {
-        message: message.message,
-        timestamp: message.timestamp,
-        isOutgoing: false,
-        from: message.from
+        id: Date.now(), // Add unique ID
+        message: messageData.text?.body || messageData.message, // Handle both formats
+        timestamp: messageData.timestamp || Date.now() / 1000,
+        is_outgoing: false,
+        phone: messageData.from
       }]);
     });
 
@@ -172,7 +192,15 @@ const ChatBox = ({
         try {
           const response = await axios.get(`/api/webhook/messages/${id}`);
           if (response.data.success) {
-            setMessages(response.data.data);
+            // Transform messages to consistent format
+            const formattedMessages = response.data.data.map(msg => ({
+              id: msg.id,
+              message: msg.message,
+              timestamp: new Date(msg.timestamp).getTime() / 1000,
+              is_outgoing: msg.is_outgoing,
+              phone: msg.phone
+            }));
+            setMessages(formattedMessages);
           }
         } catch (error) {
           console.error('Error fetching messages:', error);
@@ -186,20 +214,34 @@ const ChatBox = ({
   const renderMessages = () => {
     return messages.map((message, index) => (
       <div 
-        key={index}
-        className={`${styles.messageContainer} ${message.isOutgoing ? styles.sentMessage : ''}`}
+        key={message.id || index}
+        className={`${styles.messageContainer} ${message.is_outgoing ? styles.sentMessage : styles.receivedMessage}`}
       >
         <div className={styles.messageBubble}>
-          <div className={styles.messageText}>{message.message}</div>
+          <div className={styles.messageText}>
+            {message.message}
+          </div>
           <div className={styles.messageFooter}>
             <span className={styles.messageTime}>
-              {new Date(message.timestamp * 1000).toLocaleString()}
+              {new Date(message.timestamp * 1000).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+              })}
             </span>
           </div>
         </div>
       </div>
     ));
   };
+
+  // Add auto-scroll to bottom for new messages
+  useEffect(() => {
+    const messagesContainer = document.querySelector(`.${styles.messagesContainer}`);
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <div className={styles.chatBoxContainer}>
@@ -268,11 +310,10 @@ const ChatBox = ({
                 className={styles.textarea}
               />
               <Button 
-                type="primary"
-                icon={<SendOutlined />}
+                type="text"
+                icon={<SendOutlined />} 
                 onClick={handleSend}
-                className={styles.sendButton}
-                style={{ backgroundColor: theme.colors.primary }}
+                className={styles.iconButton}
               />
             </div>
           </TabPane>
