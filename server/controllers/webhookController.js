@@ -1,5 +1,6 @@
 // server/controllers/webhookController.js
 import { sendMessage, deleteMessage as deleteWhatsAppMessage } from '../services/WhatsappService.js';
+import { supabase } from '../config/database.js';
 
 // Handle webhook verification from Meta
 export const verifyWebhook = async (req, res) => {
@@ -26,6 +27,7 @@ export const verifyWebhook = async (req, res) => {
 export const receiveMessage = async (req, res) => {
   try {
     const { body } = req;
+    console.log('📩 Webhook received:', JSON.stringify(body, null, 2));
     
     if (body.object === 'whatsapp_business_account') {
       if (body.entry && 
@@ -35,33 +37,85 @@ export const receiveMessage = async (req, res) => {
           body.entry[0].changes[0].value.messages[0]
       ) {
         const messageData = body.entry[0].changes[0].value.messages[0];
+        const phone = messageData.from;
         
-        // Log message details
-        console.log('\n📱 New WhatsApp Message:');
-        console.log('------------------');
-        console.log('From:', messageData.from);
-        console.log('Time:', new Date(messageData.timestamp * 1000).toLocaleString());
-        console.log('Type:', messageData.type);
-        console.log('Message:', messageData.text?.body);
-        console.log('Message ID:', messageData.id);
-        console.log('------------------\n');
+        console.log('📱 Processing message from:', phone);
+        console.log('💬 Message data:', messageData);
 
-        // Emit socket event for real-time updates
-        req.app.io.emit('new_whatsapp_message', {
-          from: messageData.from,
-          message: messageData.text?.body,
-          timestamp: messageData.timestamp,
-          messageId: messageData.id
-        });
+        // Check if lead exists
+        let { data: lead, error: leadQueryError } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('phone', phone)
+          .single();
 
-        res.status(200).json({ success: true });
-      } else {
-        console.log('📝 Received webhook event but no message data');
+        if (leadQueryError) {
+          console.error('❌ Error querying lead:', leadQueryError);
+        }
+
+        console.log('🔍 Existing lead:', lead);
+
+        // If lead doesn't exist, create one
+        if (!lead) {
+          console.log('➕ Creating new lead for:', phone);
+          const currentDate = new Date();
+          
+          const { data: newLead, error: createError } = await supabase
+            .from('leads')
+            .insert([{
+              name: `WhatsApp Lead (${phone})`,
+              phone: phone,
+              assigned_user: 1, // Admin user
+              lead_source_id: 7, // WhatsApp source
+              lead_stage: 1, // Initial stage
+              lead_active_status: true,
+              fu_date: currentDate,
+              fu_hour: null,
+              fu_minutes: null,
+              fu_period: null,
+              created_at: currentDate,
+              updated_at: currentDate
+            }])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('❌ Error creating lead:', createError);
+            throw createError;
+          }
+          
+          console.log('✅ New lead created:', newLead);
+          lead = newLead;
+        }
+
+        // Store the message
+        console.log('💾 Storing message for lead:', lead.id);
+        const { error: messageError } = await supabase
+          .from('messages')
+          .insert([{
+            lead_id: lead.id,
+            phone: phone,
+            message: messageData.text?.body,
+            timestamp: new Date(messageData.timestamp * 1000),
+            is_outgoing: false
+          }]);
+
+        if (messageError) {
+          console.error('❌ Error storing message:', messageError);
+          throw messageError;
+        }
+
+        // Emit socket event with lead info
+        const socketData = {
+          ...messageData,
+          leadId: lead.id,
+          name: lead.name
+        };
+        console.log('🔌 Emitting socket event:', socketData);
+        req.app.io.emit('new_whatsapp_message', socketData);
+
         res.sendStatus(200);
       }
-    } else {
-      console.log('❓ Unknown webhook object type:', body.object);
-      res.sendStatus(404);
     }
   } catch (error) {
     console.error('❌ Error processing webhook:', error);
@@ -69,14 +123,22 @@ export const receiveMessage = async (req, res) => {
   }
 };
 
-// Add getMessages controller
+// Get messages for a lead
 export const getMessages = async (req, res) => {
   try {
     const { leadId } = req.params;
-    // For now, just return an empty array since we're not storing messages
+    
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('lead_id', leadId)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+
     res.status(200).json({
       success: true,
-      data: []
+      data: messages
     });
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -95,10 +157,33 @@ export const replyMessage = async (req, res) => {
       });
     }
 
+    console.log('📤 Sending reply to:', recipient);
     const response = await sendMessage(recipient, text);
-    res.status(200).json({ success: true, data: response });
+
+    // Store the outgoing message
+    const { error: messageError } = await supabase
+      .from('messages')
+      .insert([{
+        lead_id: req.body.leadId,
+        phone: recipient,
+        message: text,
+        timestamp: new Date(),
+        is_outgoing: true
+      }]);
+
+    if (messageError) {
+      console.error('❌ Error storing outgoing message:', messageError);
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      data: response 
+    });
   } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Error sending reply:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 };

@@ -1,4 +1,4 @@
-import supabase from '../config/database.js';
+import { supabase } from '../config/database.js';
 import jwt from 'jsonwebtoken';
 import CustomUmrahHotelModel from './CustomUmrahHotelModel.js';
 import CustomUmrahServiceModel from './CustomUmrahServiceModel.js';

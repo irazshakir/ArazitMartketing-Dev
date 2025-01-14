@@ -1,4 +1,4 @@
-import supabase from '../config/database.js';
+import { supabase } from '../config/database.js';
 
 const CustomUmrahPriceModel = {
   findByHotelId: async (hotelId) => {

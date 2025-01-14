@@ -1,4 +1,4 @@
-import supabase from '../config/database.js';
+import { supabase } from '../config/database.js';
 
 const VALID_CITIES = ['Makkah', 'Medinah'];
 const VALID_HOTEL_STARS = ['5', '4', '3', 'Economy', 'Sharing'];

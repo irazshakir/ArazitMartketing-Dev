@@ -8,20 +8,34 @@ const { WHATSAPP_API_URL, WHATSAPP_NUMBER_ID, WHATSAPP_ACCESS_TOKEN } = process.
 
 // Helper function to send a message
 export const sendMessage = async (recipient, text) => {
-  const url = `${WHATSAPP_API_URL}/${WHATSAPP_NUMBER_ID}/messages`;
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-  };
+  try {
+    console.log('📤 Sending WhatsApp message to:', recipient);
+    
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_NUMBER_ID}/messages`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+    };
 
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: recipient,
-    text: { body: text },
-  };
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipient,
+      type: 'text',
+      text: { 
+        body: text 
+      }
+    };
 
-  const response = await axios.post(url, payload, { headers });
-  return response.data;
+    console.log('📨 Sending payload:', payload);
+    const response = await axios.post(url, payload, { headers });
+    console.log('✅ Message sent successfully:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error sending WhatsApp message:', error.response?.data || error);
+    throw error;
+  }
 };
 
 // Helper function to delete a message
