@@ -19,6 +19,7 @@ const ChatInfo = ({
   const [branches, setBranches] = useState([]);
   const [isActive, setIsActive] = useState(contact.lead_active_status);
   const [formData, setFormData] = useState({
+    name: '',
     phone: contact.phone,
     email: contact.email,
     productId: contact.lead_product,
@@ -38,20 +39,33 @@ const ChatInfo = ({
         const response = await axios.get(`/api/leads/${contact.id}`);
         const leadDetails = response.data;
         
-        console.log('Fetched lead details:', leadDetails);
+        let hour = leadDetails.fu_hour;
+        let minutes = leadDetails.fu_minutes;
+        let period = leadDetails.fu_period;
+
+        if (hour) {
+          if (hour > 12) {
+            hour = hour - 12;
+            period = 'PM';
+          } else if (hour === 0) {
+            hour = 12;
+            period = 'AM';
+          }
+        }
 
         setFormData(prev => ({
           ...prev,
-          phone: contact.phone || '',
-          email: contact.email || '',
-          productId: contact.lead_product || null,
-          stageId: contact.lead_stage || null,
-          leadSourceId: contact.lead_source_id || null,
+          name: leadDetails.name || '',
+          phone: leadDetails.phone || '',
+          email: leadDetails.email || '',
+          productId: leadDetails.lead_product || null,
+          stageId: leadDetails.lead_stage || null,
+          leadSourceId: leadDetails.lead_source_id || null,
           branchId: leadDetails.branch_id || null,
-          followDate: contact.fu_date || null,
-          followHour: contact.fu_hour || null,
-          followMinutes: contact.fu_minutes || null,
-          followPeriod: contact.fu_period || null
+          followDate: leadDetails.fu_date || null,
+          followHour: hour,
+          followMinutes: minutes,
+          followPeriod: period || 'AM'
         }));
       } catch (error) {
         console.error('Error fetching lead details:', error);
@@ -89,7 +103,16 @@ const ChatInfo = ({
 
   const handleUpdate = async () => {
     try {
+      // Convert time to 24-hour format if needed
+      let hour = formData.followHour;
+      if (formData.followPeriod === 'PM' && hour !== 12) {
+        hour = hour + 12;
+      } else if (formData.followPeriod === 'AM' && hour === 12) {
+        hour = 0;
+      }
+
       const updateData = {
+        name: formData.name.trim(),  // Ensure name is properly formatted
         phone: formData.phone,
         email: formData.email,
         lead_product: formData.productId,
@@ -97,8 +120,8 @@ const ChatInfo = ({
         lead_source_id: formData.leadSourceId,
         branch_id: formData.branchId ? Number(formData.branchId) : null,
         fu_date: formData.followDate,
-        fu_hour: formData.followHour,
-        fu_minutes: formData.followMinutes,
+        fu_hour: hour,
+        fu_minutes: formData.followMinutes || 0,
         fu_period: formData.followPeriod,
         lead_active_status: isActive
       };
@@ -127,15 +150,19 @@ const ChatInfo = ({
   };
 
   const handleTimeChange = (time) => {
+    console.log('Selected time:', time);
+
     if (time) {
       const hour = time.format('hh');
       const minutes = time.format('mm');
       const period = time.format('A');
 
+      console.log('Parsed time components:', { hour, minutes, period });
+
       setFormData(prev => ({
         ...prev,
-        followHour: hour,
-        followMinutes: minutes,
+        followHour: parseInt(hour, 10),
+        followMinutes: parseInt(minutes, 10),
         followPeriod: period
       }));
     } else {
@@ -149,14 +176,30 @@ const ChatInfo = ({
   };
 
   const getTimeValue = () => {
-    if (formData.followHour && formData.followMinutes !== undefined) {
-      // Convert numeric hour to string with leading zero if needed
-      const hour = String(formData.followHour).padStart(2, '0');
-      // Convert numeric minutes to string with leading zero if needed
-      const minutes = String(formData.followMinutes).padStart(2, '0');
-      const period = formData.followPeriod || 'AM';
+    const { followHour, followMinutes, followPeriod } = formData;
+    
+    console.log('Current time values:', { followHour, followMinutes, followPeriod });
 
-      return dayjs(`${hour}:${minutes} ${period}`, 'hh:mm A');
+    if (followHour !== null && followMinutes !== null && followPeriod) {
+      try {
+        const hour = String(followHour).padStart(2, '0');
+        const minutes = String(followMinutes).padStart(2, '0');
+        const timeString = `${hour}:${minutes} ${followPeriod}`;
+        
+        console.log('Constructed time string:', timeString);
+        
+        const timeValue = dayjs(timeString, 'hh:mm A', true);
+        
+        if (timeValue.isValid()) {
+          return timeValue;
+        } else {
+          console.log('Invalid time value created');
+          return null;
+        }
+      } catch (error) {
+        console.error('Error creating time value:', error);
+        return null;
+      }
     }
     return null;
   };
@@ -232,10 +275,24 @@ const ChatInfo = ({
     <div className={styles.chatInfoContainer}>
       {/* Contact Header */}
       <div className={styles.contactHeader}>
-        <Avatar size={40}>{contact.name?.[0] || 'D'}</Avatar>
-        <div className={styles.contactName}>
-          <Text strong>{contact.name || 'dilkumars918'}</Text>
-          {contact.whatsapp && <WhatsAppOutlined className={styles.whatsappIcon} />}
+        <Avatar size={40}>
+          {formData.name?.[0] || contact.name?.[0] || 'U'}
+        </Avatar>
+        <div className={styles.contactDetails}>
+          <Input
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            placeholder="Enter name"
+            className={styles.nameInput}
+            bordered={false}
+            maxLength={50}
+          />
+          {contact.whatsapp && (
+            <div className={styles.whatsappBadge}>
+              <WhatsAppOutlined className={styles.whatsappIcon} />
+              <span>WhatsApp</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -269,14 +326,21 @@ const ChatInfo = ({
             className={styles.datePicker}
             format="DD/MM/YYYY"
             value={formData.followDate ? dayjs(formData.followDate) : null}
-            onChange={(date) => handleInputChange('followDate', date)}
+            onChange={(date) => handleInputChange('followDate', date ? date.format('YYYY-MM-DD') : null)}
+            style={{ width: '50%' }}
           />
           <TimePicker 
             className={styles.timePicker}
             format="hh:mm A"
-            use12Hours
+            use12Hours={true}
             value={getTimeValue()}
             onChange={handleTimeChange}
+            placeholder="Select time"
+            style={{ width: '50%' }}
+            showNow={false}
+            hideDisabledOptions={true}
+            minuteStep={1}
+            allowClear={true}
           />
         </div>
       </div>
