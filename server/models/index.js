@@ -155,6 +155,7 @@ export const LeadModel = {
       const { data: updatedLead, error } = await supabase
         .from('leads')
         .update({
+          name: data.name,
           phone: data.phone,
           email: data.email,
           lead_product: data.lead_product,
