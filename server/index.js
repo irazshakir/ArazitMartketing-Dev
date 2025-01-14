@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import dotenv from 'dotenv';
+
 
 // Import routes
 import productRoutes from './routes/products.js';
@@ -13,6 +15,10 @@ import authRoutes from './src/routes/auth.routes.js';
 import customUmrahRoutes from './routes/customUmrah.js';
 import invoiceRoutes from './routes/invoices.js';
 import branchRoutes from './routes/branches.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+
+// Initialize dotenv
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,6 +39,7 @@ app.use('/api', userRoutes);
 app.use('/api', customUmrahRoutes);
 app.use('/api', invoiceRoutes);
 app.use('/api', branchRoutes);
+app.use('/api', webhookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
