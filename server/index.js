@@ -3,6 +3,8 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import dotenv from 'dotenv';
+import { Server } from 'socket.io';
+import { createServer } from 'http';
 
 
 // Import routes
@@ -49,8 +51,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ["http://localhost:3000", "http://localhost:5173"],
+    methods: ["GET", "POST"]
+  }
+});
+
+// Store io instance on app
+app.io = io;
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 

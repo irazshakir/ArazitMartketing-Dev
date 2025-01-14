@@ -2,8 +2,8 @@ import express from 'express';
 import { 
   receiveMessage, 
   replyMessage, 
-  deleteMessage, 
-  verifyWebhook 
+  verifyWebhook,
+  getMessages 
 } from '../controllers/webhookController.js';
 
 const router = express.Router();
@@ -17,7 +17,7 @@ router.post('/webhook/messages', receiveMessage);
 // Route for replying to messages
 router.post('/webhook/reply', replyMessage);
 
-// Route for deleting messages
-router.delete('/webhook/messages/:id', deleteMessage);
+// New route to fetch messages
+router.get('/webhook/messages/:leadId', getMessages);
 
 export default router;

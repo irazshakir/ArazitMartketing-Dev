@@ -8,15 +8,11 @@ export const verifyWebhook = async (req, res) => {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    // Check if a token and mode were sent
     if (mode && token) {
-      // Check the mode and token sent are correct
       if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-        // Respond with 200 OK and challenge token from the request
         console.log('✅ WEBHOOK_VERIFIED');
         res.status(200).send(challenge);
       } else {
-        // Responds with '403 Forbidden' if verify tokens do not match
         res.sendStatus(403);
       }
     }
@@ -31,10 +27,6 @@ export const receiveMessage = async (req, res) => {
   try {
     const { body } = req;
     
-    console.log('\n📩 Received Webhook Event:');
-    console.log('Full payload:', JSON.stringify(body, null, 2));
-
-    // Handle incoming messages
     if (body.object === 'whatsapp_business_account') {
       if (body.entry && 
           body.entry[0].changes && 
@@ -44,7 +36,7 @@ export const receiveMessage = async (req, res) => {
       ) {
         const messageData = body.entry[0].changes[0].value.messages[0];
         
-        // Log message details in a readable format
+        // Log message details
         console.log('\n📱 New WhatsApp Message:');
         console.log('------------------');
         console.log('From:', messageData.from);
@@ -54,10 +46,18 @@ export const receiveMessage = async (req, res) => {
         console.log('Message ID:', messageData.id);
         console.log('------------------\n');
 
+        // Emit socket event for real-time updates
+        req.app.io.emit('new_whatsapp_message', {
+          from: messageData.from,
+          message: messageData.text?.body,
+          timestamp: messageData.timestamp,
+          messageId: messageData.id
+        });
+
         res.status(200).json({ success: true });
       } else {
         console.log('📝 Received webhook event but no message data');
-        res.sendStatus(200); // WhatsApp expects a 200 response
+        res.sendStatus(200);
       }
     } else {
       console.log('❓ Unknown webhook object type:', body.object);
@@ -65,6 +65,21 @@ export const receiveMessage = async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error processing webhook:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Add getMessages controller
+export const getMessages = async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    // For now, just return an empty array since we're not storing messages
+    res.status(200).json({
+      success: true,
+      data: []
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -84,25 +99,6 @@ export const replyMessage = async (req, res) => {
     res.status(200).json({ success: true, data: response });
   } catch (error) {
     console.error('Error sending message:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-};
-
-// Delete a message
-export const deleteMessage = async (req, res) => {
-  const { id } = req.params;
-  try {
-    if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Message ID is required' 
-      });
-    }
-
-    const response = await deleteWhatsAppMessage(id);
-    res.status(200).json({ success: true, data: response });
-  } catch (error) {
-    console.error('Error deleting message:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
