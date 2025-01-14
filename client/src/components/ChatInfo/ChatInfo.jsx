@@ -16,6 +16,7 @@ const ChatInfo = ({
   const [products, setProducts] = useState([]);
   const [stages, setStages] = useState([]);
   const [leadSources, setLeadSources] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [isActive, setIsActive] = useState(contact.lead_active_status);
   const [formData, setFormData] = useState({
     phone: contact.phone,
@@ -23,6 +24,7 @@ const ChatInfo = ({
     productId: contact.lead_product,
     stageId: contact.lead_stage,
     leadSourceId: contact.lead_source_id,
+    branchId: contact.branch_id,
     followDate: contact.fu_date,
     followHour: contact.fu_hour,
     followMinutes: contact.fu_minutes,
@@ -37,6 +39,7 @@ const ChatInfo = ({
       productId: contact.lead_product,
       stageId: contact.lead_stage,
       leadSourceId: contact.lead_source_id,
+      branchId: contact.branch_id,
       followDate: contact.fu_date,
       followHour: contact.fu_hour,
       followMinutes: contact.fu_minutes,
@@ -48,15 +51,17 @@ const ChatInfo = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, stagesRes, sourcesRes] = await Promise.all([
+        const [productsRes, stagesRes, sourcesRes, branchesRes] = await Promise.all([
           axios.get('/api/products'),
           axios.get('/api/stages'),
-          axios.get('/api/lead-sources')
+          axios.get('/api/lead-sources'),
+          axios.get('/api/branches')
         ]);
         
         setProducts(productsRes.data);
         setStages(stagesRes.data);
         setLeadSources(sourcesRes.data);
+        setBranches(branchesRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -73,6 +78,7 @@ const ChatInfo = ({
         lead_product: formData.productId,
         lead_stage: formData.stageId,
         lead_source_id: formData.leadSourceId,
+        branch_id: formData.branchId,
         fu_date: formData.followDate,
         fu_hour: formData.followHour,
         fu_minutes: formData.followMinutes,
@@ -298,6 +304,23 @@ const ChatInfo = ({
           {leadSources.map(source => (
             <Option key={source.id} value={source.id}>
               {source.lead_source_name || source.name}
+            </Option>
+          ))}
+        </Select>
+      </div>
+
+      {/* Branch Dropdown */}
+      <div className={styles.infoSection}>
+        <Text type="secondary">Branch</Text>
+        <Select
+          placeholder="Select Branch"
+          className={styles.select}
+          value={formData.branchId || undefined}
+          onChange={(value) => handleInputChange('branchId', value)}
+        >
+          {branches.map(branch => (
+            <Option key={branch.id} value={branch.id}>
+              {branch.branch_name}
             </Option>
           ))}
         </Select>

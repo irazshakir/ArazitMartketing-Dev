@@ -218,6 +218,7 @@ const LeadEdit = () => {
               lead_product: lead?.lead_product,
               lead_stage: lead?.lead_stage,
               lead_source_id: lead?.lead_source_id,
+              branch_id: lead?.branch_id,
               fu_date: lead?.fu_date,
               fu_hour: lead?.fu_hour,
               fu_minutes: lead?.fu_minutes,

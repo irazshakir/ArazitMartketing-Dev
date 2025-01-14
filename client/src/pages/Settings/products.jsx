@@ -163,6 +163,10 @@ const Products = () => {
       key: 'lead-sources',
       label: 'Lead Sources',
     },
+    {
+      key: 'company-branches',
+      label: 'Company Branches',
+    },
   ];
 
   const handleTabChange = (key) => {
@@ -179,6 +183,9 @@ const Products = () => {
       case 'lead-sources':
         navigate('/admin/settings/lead-sources');
         break;
+        case 'company-branches':
+          navigate('/admin/settings/company-branches');
+          break;
     }
   };
 

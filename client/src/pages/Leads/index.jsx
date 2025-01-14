@@ -52,22 +52,25 @@ const Leads = () => {
   const [users, setUsers] = useState([]);
   const [leads, setLeads] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [branches, setBranches] = useState([]);
 
   // Fetch dropdown data
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [productsRes, stagesRes, sourcesRes, usersRes] = await Promise.all([
+        const [productsRes, stagesRes, sourcesRes, usersRes, branchesRes] = await Promise.all([
           axios.get('/api/products'),
           axios.get('/api/stages'),
           axios.get('/api/lead-sources'),
-          axios.get('/api/users')
+          axios.get('/api/users'),
+          axios.get('/api/branches')
         ]);
 
         setProducts(productsRes.data || []);
         setStages(stagesRes.data || []);
         setLeadSources(sourcesRes.data || []);
         setUsers(usersRes.data || []);
+        setBranches(branchesRes.data || []);
       } catch (error) {
         message.error('Failed to fetch dropdown data');
       }
@@ -105,6 +108,7 @@ const Leads = () => {
         assigned_user: values.assigned_user,
         initial_remarks: values.initial_remarks,
         lead_active_status: values.lead_active_status,
+        branch_id: values.branch_id,
         fu_date: values.fu_date ? new Date(values.fu_date).toISOString().split('T')[0] : null
       };
 
@@ -136,6 +140,7 @@ const Leads = () => {
       assigned_user: record.assigned_user,
       initial_remarks: record.initial_remarks,
       lead_active_status: record.lead_active_status,
+      branch_id: record.branch_id,
       fu_date: record.fu_date ? record.fu_date.split('T')[0] : null
     };
     
@@ -430,6 +435,20 @@ const Leads = () => {
                 {users.map(user => (
                   <Select.Option key={user.id} value={user.id}>
                     {user.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="branch_id"
+              label="Branch"
+              rules={[{ required: true, message: 'Please select branch!' }]}
+            >
+              <Select>
+                {branches.map(branch => (
+                  <Select.Option key={branch.id} value={branch.id}>
+                    {branch.branch_name}
                   </Select.Option>
                 ))}
               </Select>

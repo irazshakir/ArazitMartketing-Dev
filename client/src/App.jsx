@@ -25,6 +25,7 @@ import LeadSources from './pages/Settings/LeadSources';
 import LeadEdit from './pages/Leads/Edit';
 import Invoices from './pages/Invoices/Index';
 import Accounts from './pages/Accounts/Index';
+import CompanyBranches from './pages/Settings/CompanyBranches';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -112,6 +113,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="stages" element={<Stages />} />
           <Route path="lead-sources" element={<LeadSources />} />
+          <Route path="company-branches" element={<CompanyBranches />} />
         </Route>
 
         {/* User Management Routes */}
