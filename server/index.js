@@ -12,6 +12,7 @@ import leadRoutes from './routes/leads.js';
 import authRoutes from './src/routes/auth.routes.js';
 import customUmrahRoutes from './routes/customUmrah.js';
 import invoiceRoutes from './routes/invoices.js';
+import branchRoutes from './routes/branches.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,6 +32,7 @@ app.use('/api', leadSourceRoutes);
 app.use('/api', userRoutes);
 app.use('/api', customUmrahRoutes);
 app.use('/api', invoiceRoutes);
+app.use('/api', branchRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

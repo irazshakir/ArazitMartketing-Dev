@@ -97,7 +97,8 @@ export const LeadModel = {
           products!lead_product(product_name),
           stages!lead_stage(stage_name),
           lead_sources!lead_source_id(lead_source_name),
-          users!assigned_user(name)
+          users!assigned_user(name),
+          company_branches!leads_branch_id_fkey(branch_name)
         `);
       
       if (search && search.trim()) {
@@ -133,7 +134,13 @@ export const LeadModel = {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select()
+        .select(`
+          *,
+          company_branches!leads_branch_id_fkey (
+            id,
+            branch_name
+          )
+        `)
         .eq('id', id)
         .single();
       if (error) throw error;
@@ -153,6 +160,7 @@ export const LeadModel = {
           lead_product: data.lead_product,
           lead_stage: data.lead_stage,
           lead_source_id: data.lead_source_id,
+          branch_id: data.branch_id,
           fu_date: data.fu_date,
           fu_hour: data.fu_hour,
           fu_minutes: data.fu_minutes,
@@ -197,6 +205,7 @@ export const LeadModel = {
           lead_product,
           lead_stage,
           lead_source_id,
+          branch_id,
           assigned_user,
           fu_date,
           fu_hour,
@@ -207,7 +216,8 @@ export const LeadModel = {
           products:lead_product (product_name),
           stages:lead_stage (stage_name),
           lead_sources:lead_source_id (lead_source_name),
-          users:assigned_user (name)
+          users:assigned_user (name),
+          company_branches:branch_id (branch_name)
         `)
         .eq('id', id)
         .single();
@@ -293,6 +303,66 @@ export const SessionModel = {
       };
     } catch (error) {
       console.error('SessionModel error:', error);
+      throw error;
+    }
+  }
+};
+
+export const BranchModel = {
+  findAll: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_branches')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  create: async (values) => {
+    try {
+      const { data, error } = await supabase
+        .from('company_branches')
+        .insert([values])
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  update: async (id, values) => {
+    try {
+      const { data, error } = await supabase
+        .from('company_branches')
+        .update(values)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  destroy: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('company_branches')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
       throw error;
     }
   }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { LeadModel, ProductModel, StageModel, LeadSourceModel, UserModel } from '../models/index.js';
+import { LeadModel, ProductModel, StageModel, LeadSourceModel, UserModel, BranchModel } from '../models/index.js';
 
 
 const router = express.Router();
@@ -184,6 +184,18 @@ router.post('/leads/:id/notes', async (req, res) => {
     res.status(201).json(note);
   } catch (error) {
     res.status(500).json({ message: 'Error creating note', error });
+  }
+});
+
+// Add this with other GET routes
+router.get('/branches', async (req, res) => {
+  try {
+    const branches = await BranchModel.findAll({
+      where: { branch_is_active: true }
+    });
+    res.json(branches);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching branches', error });
   }
 });
 
