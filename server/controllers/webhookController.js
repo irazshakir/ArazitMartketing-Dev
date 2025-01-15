@@ -90,13 +90,17 @@ export const receiveMessage = async (req, res) => {
 
         // Store the message
         console.log('💾 Storing message for lead:', lead.id);
+        const timestamp = messageData.timestamp 
+          ? new Date(messageData.timestamp * 1000) // Convert WhatsApp timestamp to Date
+          : new Date();
+
         const { error: messageError } = await supabase
           .from('messages')
           .insert([{
             lead_id: lead.id,
             phone: phone,
             message: messageData.text?.body,
-            timestamp: new Date(messageData.timestamp * 1000),
+            timestamp: timestamp.toISOString(), // Store as ISO string
             is_outgoing: false
           }]);
 
@@ -157,11 +161,11 @@ export const replyMessage = async (req, res) => {
       });
     }
 
-    console.log('📤 Sending reply to:', recipient);
     const response = await sendMessage(recipient, text);
+    const timestamp = Math.floor(Date.now() / 1000); // Current server timestamp
 
     // Store the outgoing message
-    const { error: messageError } = await supabase
+    const { data: messageData, error: messageError } = await supabase
       .from('messages')
       .insert([{
         lead_id: req.body.leadId,
@@ -169,7 +173,9 @@ export const replyMessage = async (req, res) => {
         message: text,
         timestamp: new Date(),
         is_outgoing: true
-      }]);
+      }])
+      .select()
+      .single();
 
     if (messageError) {
       console.error('❌ Error storing outgoing message:', messageError);
@@ -177,7 +183,9 @@ export const replyMessage = async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      data: response 
+      data: response,
+      timestamp: timestamp,
+      messageId: messageData?.id
     });
   } catch (error) {
     console.error('❌ Error sending reply:', error);
