@@ -360,14 +360,19 @@ export const getUnreadChatCounts = async (req, res) => {
 
     if (error) throw error;
 
-    // Count unread chats for each tab
+    // Count unread chats for each tab and per chat
     const counts = {
       unassigned: 0,
-      mine: 0
+      mine: 0,
+      perChat: {} // Add this to track per-chat counts
     };
 
     chats.forEach(chat => {
       if (chat.messages && chat.messages.length > 0) {
+        // Count unread messages for this chat
+        counts.perChat[chat.id] = chat.messages.length;
+        
+        // Update tab counts
         if (chat.assigned_user === null) {
           counts.unassigned++;
         } else if (chat.assigned_user === parseInt(user_id)) {
@@ -404,7 +409,7 @@ export const markMessagesAsRead = async (req, res) => {
 
     if (updateError) throw updateError;
 
-    // Get updated unread counts
+    // Get updated counts with per-chat information
     const { data: chats, error: countError } = await supabase
       .from('leads')
       .select(`
@@ -421,14 +426,16 @@ export const markMessagesAsRead = async (req, res) => {
 
     if (countError) throw countError;
 
-    // Calculate new counts
     const counts = {
       unassigned: 0,
-      mine: 0
+      mine: 0,
+      perChat: {}
     };
 
     chats.forEach(chat => {
       if (chat.messages && chat.messages.length > 0) {
+        counts.perChat[chat.id] = chat.messages.length;
+        
         if (chat.assigned_user === null) {
           counts.unassigned++;
         } else if (chat.assigned_user === parseInt(user_id)) {
