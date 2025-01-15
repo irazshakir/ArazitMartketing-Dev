@@ -227,3 +227,85 @@ export const getLastMessageTime = async (req, res) => {
     });
   }
 };
+
+// Add this new controller function for filtered chats
+export const getFilteredChats = async (req, res) => {
+  try {
+    const { filter } = req.query;
+    const { user_id } = req.query;
+
+    console.log('Starting getFilteredChats with filter:', filter);
+
+    // Update the query to match your schema
+    let { data: chats, error } = await supabase
+      .from('leads')
+      .select(`
+        *,
+        users!leads_assigned_user_fkey (
+          id,
+          name,
+          role_id,
+          user_is_active
+        ),
+        messages (
+          message,
+          timestamp,
+          is_outgoing
+        )
+      `)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
+
+    console.log('Initial chats fetched:', chats?.length);
+
+    // Apply filters after fetching data
+    let filteredChats = chats;
+
+    switch (filter) {
+      case 'unassigned':
+        console.log('Filtering unassigned chats');
+        filteredChats = chats.filter(chat => !chat.assigned_user);
+        break;
+
+      case 'mine':
+        console.log('Filtering my chats for user_id:', user_id);
+        const userIdNum = parseInt(user_id);
+        filteredChats = chats.filter(chat => chat.assigned_user === userIdNum);
+        break;
+
+      case 'open':
+        console.log('Filtering open chats');
+        filteredChats = chats.filter(chat => chat.lead_active_status === true);
+        break;
+
+      case 'resolved':
+        console.log('Filtering resolved chats');
+        filteredChats = chats.filter(chat => chat.lead_active_status === false);
+        break;
+    }
+
+    console.log('Filtered chats count:', filteredChats?.length);
+
+    res.status(200).json({
+      success: true,
+      data: filteredChats,
+      debug: {
+        totalChats: chats?.length,
+        filteredChats: filteredChats?.length,
+        filter,
+        userId: user_id
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getFilteredChats:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
