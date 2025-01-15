@@ -195,3 +195,35 @@ export const replyMessage = async (req, res) => {
     });
   }
 };
+
+// Add this new controller function
+export const getLastMessageTime = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('timestamp, message')  // Also select the message content
+      .eq('lead_id', chatId)
+      .order('timestamp', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    const lastMessage = messages && messages.length > 0 ? {
+      timestamp: messages[0].timestamp,
+      message: messages[0].message?.substring(0, 30) + '...' // Truncate message to first 30 chars
+    } : null;
+
+    res.status(200).json({
+      success: true,
+      ...lastMessage
+    });
+  } catch (error) {
+    console.error('Error fetching last message time:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
