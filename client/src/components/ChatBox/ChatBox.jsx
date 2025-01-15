@@ -37,7 +37,17 @@ const inlineStyles = {
   }
 };
 
-
+// Helper function to safely convert PostgreSQL timestamp to Unix timestamp
+const postgresTimestampToUnix = (pgTimestamp) => {
+  try {
+    // Handle PostgreSQL timestamp with timezone format
+    // Example: 2025-01-14 20:58:04.102689+00
+    return Math.floor(new Date(pgTimestamp).getTime() / 1000);
+  } catch (error) {
+    console.error('Error converting timestamp:', error);
+    return Math.floor(Date.now() / 1000); // Fallback to current time
+  }
+};
 
 const ChatBox = ({ 
   onSendMessage, 
@@ -80,7 +90,12 @@ const ChatBox = ({
         if (id) {
           const response = await axios.get(`/api/leads/${id}/notes`);
           if (response.data) {
-            setNotes(response.data);
+            const formattedNotes = response.data.map(note => ({
+              ...note,
+              // Use the helper function for timestamp conversion
+              timestamp: postgresTimestampToUnix(note.created_at)
+            }));
+            setNotes(formattedNotes);
           }
         }
       } catch (error) {
@@ -112,11 +127,11 @@ const ChatBox = ({
           });
 
           if (response.data.success) {
-            // Add message to local state with consistent format
+            const serverTimestamp = response.data.timestamp || (Date.now() / 1000);
             setMessages(prev => [...prev, {
-              id: Date.now(),
+              id: response.data.messageId || Date.now(),
               message: message,
-              timestamp: Date.now() / 1000,
+              timestamp: serverTimestamp,
               is_outgoing: true,
               phone: phone
             }]);
@@ -126,10 +141,18 @@ const ChatBox = ({
             console.error('Failed to send message:', response.data.error);
           }
         } else {
-          // Handle notes as before
-          await onAddNote(message);
+          // For notes, let the server handle the timestamp
+          const noteResponse = await onAddNote(message);
           const response = await axios.get(`/api/leads/${id}/notes`);
-          setNotes(response.data || []);
+          
+          // Format the fetched notes with proper timestamp conversion
+          const formattedNotes = response.data.map(note => ({
+            ...note,
+            // Always convert PostgreSQL timestamp to Unix timestamp
+            timestamp: new Date(note.created_at).getTime() / 1000
+          }));
+          
+          setNotes(formattedNotes);
           setMessage('');
         }
       } catch (error) {
@@ -173,10 +196,14 @@ const ChatBox = ({
 
     newSocket.on('new_whatsapp_message', (messageData) => {
       console.log('ChatBox received message:', messageData);
+      const timestamp = messageData.timestamp 
+        ? new Date(messageData.timestamp * 1000).getTime() / 1000  // Convert to Unix timestamp
+        : Math.floor(Date.now() / 1000);
+
       setMessages(prev => [...prev, {
-        id: Date.now(), // Add unique ID
-        message: messageData.text?.body || messageData.message, // Handle both formats
-        timestamp: messageData.timestamp || Date.now() / 1000,
+        id: messageData.id || Date.now(),
+        message: messageData.text?.body || messageData.message,
+        timestamp: timestamp,
         is_outgoing: false,
         phone: messageData.from
       }]);
@@ -192,11 +219,10 @@ const ChatBox = ({
         try {
           const response = await axios.get(`/api/webhook/messages/${id}`);
           if (response.data.success) {
-            // Transform messages to consistent format
             const formattedMessages = response.data.data.map(msg => ({
               id: msg.id,
               message: msg.message,
-              timestamp: new Date(msg.timestamp).getTime() / 1000,
+              timestamp: new Date(msg.timestamp).getTime() / 1000, // Convert all dates to Unix timestamp
               is_outgoing: msg.is_outgoing,
               phone: msg.phone
             }));
@@ -212,27 +238,77 @@ const ChatBox = ({
   }, [id]);
 
   const renderMessages = () => {
-    return messages.map((message, index) => (
-      <div 
-        key={message.id || index}
-        className={`${styles.messageContainer} ${message.is_outgoing ? styles.sentMessage : styles.receivedMessage}`}
-      >
-        <div className={styles.messageBubble}>
-          <div className={styles.messageText}>
-            {message.message}
-          </div>
-          <div className={styles.messageFooter}>
-            <span className={styles.messageTime}>
-              {new Date(message.timestamp * 1000).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: 'numeric',
-                hour12: true
-              })}
-            </span>
-          </div>
-        </div>
+    const combinedMessages = [
+      ...messages.map(msg => ({
+        ...msg,
+        type: 'whatsapp',
+        timestamp: typeof msg.timestamp === 'string' 
+          ? postgresTimestampToUnix(msg.timestamp)
+          : msg.timestamp
+      })),
+      ...notes.map(note => ({
+        id: note.id,
+        message: note.note || '',
+        // Properly convert PostgreSQL timestamp
+        timestamp: postgresTimestampToUnix(note.created_at),
+        type: 'note',
+        user: note.users?.name || 'Unknown'
+      }))
+    ].sort((a, b) => a.timestamp - b.timestamp);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {combinedMessages.map((item, index) => {
+          // Format the time display
+          const messageTime = new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+          });
+
+          if (item.type === 'whatsapp') {
+            return (
+              <div 
+                key={item.id || index}
+                className={`${styles.messageContainer} ${item.is_outgoing ? styles.sentMessage : styles.receivedMessage}`}
+              >
+                <div className={styles.messageBubble}>
+                  <div className={styles.messageText}>
+                    {item.message}
+                  </div>
+                  <div className={styles.messageFooter}>
+                    <span className={styles.messageTime}>
+                      {messageTime}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <div 
+                key={item.id || index}
+                className={`${styles.messageContainer} ${styles.noteMessage}`}
+              >
+                <div className={`${styles.messageBubble} ${styles.noteBubble}`}>
+                  <div className={styles.noteHeader}>
+                    <small>Note by {item.user}</small>
+                  </div>
+                  <div className={`${styles.messageText} ${styles.noteText}`}>
+                    {item.message}
+                  </div>
+                  <div className={styles.messageFooter}>
+                    <span className={styles.messageTime}>
+                      {messageTime}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+        })}
       </div>
-    ));
+    );
   };
 
   // Add auto-scroll to bottom for new messages
