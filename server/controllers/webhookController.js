@@ -284,10 +284,10 @@ export const getLastMessageTime = async (req, res) => {
 // Get filtered chats with strict filtering
 export const getFilteredChats = async (req, res) => {
   try {
-    const { filter } = req.query;
+    const { filter, searchQuery } = req.query;
     const { user_id } = req.query;
 
-    console.log('Starting getFilteredChats with filter:', filter);
+    console.log('Starting getFilteredChats with filter:', filter, 'search:', searchQuery);
 
     let query = supabase
       .from('leads')
@@ -306,40 +306,31 @@ export const getFilteredChats = async (req, res) => {
         )
       `);
 
-    // Apply strict filters at database level
+    // Apply search filter if provided
+    if (searchQuery) {
+      query = query.or(`name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`);
+    }
+
+    // Apply existing filters
     switch (filter) {
       case 'unassigned':
-        console.log('Filtering strictly unassigned chats');
         query = query.is('assigned_user', null);
         break;
-
       case 'mine':
-        console.log('Filtering my chats for user_id:', user_id);
         query = query.eq('assigned_user', user_id);
         break;
-
       case 'open':
-        console.log('Filtering open chats');
         query = query.eq('lead_active_status', true);
         break;
-
       case 'resolved':
-        console.log('Filtering resolved chats');
         query = query.eq('lead_active_status', false);
         break;
     }
 
-    // Add ordering by latest update
     query = query.order('updated_at', { ascending: false });
-
     const { data: chats, error } = await query;
 
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw error;
-    }
-
-    console.log(`Found ${chats?.length} chats for filter: ${filter}`);
+    if (error) throw error;
 
     res.status(200).json({
       success: true,
