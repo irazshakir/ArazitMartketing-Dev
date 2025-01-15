@@ -109,12 +109,47 @@ export const receiveMessage = async (req, res) => {
           throw messageError;
         }
 
+        // After storing the message, get updated unread counts
+        const { data: chats, error: countError } = await supabase
+          .from('leads')
+          .select(`
+            id,
+            assigned_user,
+            messages (
+              id,
+              is_read,
+              is_outgoing
+            )
+          `)
+          .eq('messages.is_read', false)
+          .eq('messages.is_outgoing', false);
+
+        if (!countError) {
+          const counts = {
+            unassigned: 0,
+            mine: 0
+          };
+
+          chats.forEach(chat => {
+            if (chat.messages && chat.messages.length > 0) {
+              if (chat.assigned_user === null) {
+                counts.unassigned++;
+              } else if (chat.assigned_user === lead.assigned_user) {
+                counts.mine++;
+              }
+            }
+          });
+
+          // Emit socket event with unread counts
+          req.app.io.emit('unread_counts_update', counts);
+        }
+
         // Emit socket event with lead info and assigned status
         const socketData = {
           ...messageData,
           leadId: lead.id,
           name: lead.name,
-          assigned_user: lead.assigned_user // Include assigned_user in socket data
+          assigned_user: lead.assigned_user
         };
         console.log('🔌 Emitting socket event:', socketData);
         req.app.io.emit('new_whatsapp_message', socketData);
@@ -300,5 +335,117 @@ export const getFilteredChats = async (req, res) => {
       success: false, 
       error: error.message 
     });
+  }
+};
+
+// Add new endpoint to track unread messages per tab
+export const getUnreadChatCounts = async (req, res) => {
+  try {
+    const { user_id } = req.query;
+    
+    // Get all chats with unread messages
+    const { data: chats, error } = await supabase
+      .from('leads')
+      .select(`
+        id,
+        assigned_user,
+        messages (
+          id,
+          is_read,
+          is_outgoing
+        )
+      `)
+      .eq('messages.is_read', false)
+      .eq('messages.is_outgoing', false);
+
+    if (error) throw error;
+
+    // Count unread chats for each tab
+    const counts = {
+      unassigned: 0,
+      mine: 0
+    };
+
+    chats.forEach(chat => {
+      if (chat.messages && chat.messages.length > 0) {
+        if (chat.assigned_user === null) {
+          counts.unassigned++;
+        } else if (chat.assigned_user === parseInt(user_id)) {
+          counts.mine++;
+        }
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: counts
+    });
+  } catch (error) {
+    console.error('Error getting unread chat counts:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Add new function to mark messages as read
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    const { user_id } = req.query;
+
+    console.log('Marking messages as read for lead:', leadId);
+
+    // Update all unread messages for this lead to read
+    const { error: updateError } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('lead_id', leadId)
+      .eq('is_outgoing', false)
+      .eq('is_read', false);
+
+    if (updateError) throw updateError;
+
+    // Get updated unread counts
+    const { data: chats, error: countError } = await supabase
+      .from('leads')
+      .select(`
+        id,
+        assigned_user,
+        messages (
+          id,
+          is_read,
+          is_outgoing
+        )
+      `)
+      .eq('messages.is_read', false)
+      .eq('messages.is_outgoing', false);
+
+    if (countError) throw countError;
+
+    // Calculate new counts
+    const counts = {
+      unassigned: 0,
+      mine: 0
+    };
+
+    chats.forEach(chat => {
+      if (chat.messages && chat.messages.length > 0) {
+        if (chat.assigned_user === null) {
+          counts.unassigned++;
+        } else if (chat.assigned_user === parseInt(user_id)) {
+          counts.mine++;
+        }
+      }
+    });
+
+    // Emit updated counts via socket
+    req.app.io.emit('unread_counts_update', counts);
+
+    res.status(200).json({
+      success: true,
+      data: counts
+    });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };

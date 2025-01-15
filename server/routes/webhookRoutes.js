@@ -5,7 +5,9 @@ import {
   verifyWebhook,
   getMessages,
   getLastMessageTime,
-  getFilteredChats
+  getFilteredChats,
+  getUnreadChatCounts,
+  markMessagesAsRead
 } from '../controllers/webhookController.js';
 
 const router = express.Router();
@@ -30,5 +32,11 @@ router.get('/webhook/filtered-chats', (req, res, next) => {
   console.log('Filtered chats route hit with query:', req.query);
   getFilteredChats(req, res);
 });
+
+// Add new route for unread chat counts
+router.get('/webhook/unread-counts', getUnreadChatCounts);
+
+// Add new route for marking messages as read
+router.post('/webhook/messages/:leadId/read', markMessagesAsRead);
 
 export default router;
