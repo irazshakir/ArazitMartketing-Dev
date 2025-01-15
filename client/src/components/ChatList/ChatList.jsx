@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, Avatar, Typography, Space, Badge, Input, Tooltip, Tabs } from 'antd';
+import { List, Avatar, Typography, Space, Badge, Input, Tooltip, Tabs, Tag } from 'antd';
 import { 
   WhatsAppOutlined, 
   SearchOutlined, 
@@ -9,7 +9,7 @@ import {
   MessageOutlined,
   PushpinFilled,
   FolderOpenOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -28,7 +28,7 @@ dayjs.extend(timezone);
 const { Text } = Typography;
 const { TabPane } = Tabs;
 
-const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
+const ChatList = ({ onChatSelect, selectedChatId }) => {
   const [activeTab, setActiveTab] = useState('unassigned');
   const [unreadCounts, setUnreadCounts] = useState({});
   const [socket, setSocket] = useState(null);
@@ -36,6 +36,8 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
   const [lastMessageTimes, setLastMessageTimes] = useState({});
   const [lastMessages, setLastMessages] = useState({});
   const [assignedUsers, setAssignedUsers] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [filteredChats, setFilteredChats] = useState([]);
 
   // Add function to truncate message to three words
   const truncateToThreeWords = (message) => {
@@ -44,10 +46,64 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     return words.slice(0, 3).join(' ') + (words.length > 3 ? '...' : '');
   };
 
+  // Add function to get logged in user ID
+  const getLoggedInUserId = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user?.id;
+  };
+
+  // Update fetchFilteredChats function with debug logs
+  const fetchFilteredChats = async (filter) => {
+    setLoading(true);
+    try {
+      const userId = getLoggedInUserId();
+      console.log('Fetching chats with filter:', filter);
+      console.log('User ID:', userId);
+
+      const response = await axios.get(`/api/webhook/filtered-chats?filter=${filter}&user_id=${userId}`);
+      console.log('API Response:', response.data);
+      
+      if (response.data.success) {
+        setFilteredChats(response.data.data);
+        console.log('Filtered Chats:', response.data.data);
+        
+        // Fetch last messages for new chats
+        const promises = response.data.data.map(chat => 
+          axios.get(`/api/messages/last-message-time/${chat.id}`)
+        );
+        
+        const messageResponses = await Promise.all(promises);
+        console.log('Message Responses:', messageResponses);
+        
+        const times = {};
+        const messages = {};
+        messageResponses.forEach((response, index) => {
+          if (response.data && response.data.timestamp) {
+            times[response.data.id] = response.data.timestamp;
+            messages[response.data.id] = truncateToThreeWords(response.data.message);
+          }
+        });
+        
+        setLastMessageTimes(times);
+        setLastMessages(messages);
+      }
+    } catch (error) {
+      console.error('Error fetching filtered chats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch chats when tab changes
+  useEffect(() => {
+    console.log('Tab changed to:', activeTab);
+    fetchFilteredChats(activeTab);
+  }, [activeTab]);
+
   useEffect(() => {
     const fetchLastMessageTimes = async () => {
       try {
-        const promises = chats.map(chat => 
+        const promises = filteredChats.map(chat => 
           axios.get(`/api/messages/last-message-time/${chat.id}`)
         );
         
@@ -57,8 +113,8 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
         const messages = {};
         responses.forEach((response, index) => {
           if (response.data && response.data.timestamp) {
-            times[chats[index].id] = response.data.timestamp;
-            messages[chats[index].id] = truncateToThreeWords(response.data.message);
+            times[filteredChats[index].id] = response.data.timestamp;
+            messages[filteredChats[index].id] = truncateToThreeWords(response.data.message);
           }
         });
         
@@ -69,10 +125,10 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
       }
     };
 
-    if (chats.length > 0) {
+    if (filteredChats.length > 0) {
       fetchLastMessageTimes();
     }
-  }, [chats]);
+  }, [filteredChats]);
 
   useEffect(() => {
     const newSocket = io(BACKEND_URL);
@@ -93,7 +149,7 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
       }));
 
       // Find existing chat
-      const existingChatIndex = chats.findIndex(chat => 
+      const existingChatIndex = filteredChats.findIndex(chat => 
         chat.phone === message.from || chat.id === message.leadId
       );
 
@@ -109,17 +165,17 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
           whatsapp: true,
           assigned_user: message.assigned_user || 'Unassigned'
         };
-        chats.unshift(newChat);
+        filteredChats.unshift(newChat);
       } else {
         // Update existing chat
         const updatedChat = {
-          ...chats[existingChatIndex],
+          ...filteredChats[existingChatIndex],
           lastMessage: truncatedMessage
         };
         
         // Remove chat from current position and add to beginning
-        chats.splice(existingChatIndex, 1);
-        chats.unshift(updatedChat);
+        filteredChats.splice(existingChatIndex, 1);
+        filteredChats.unshift(updatedChat);
       }
 
       // Update last message and time
@@ -135,13 +191,13 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     });
 
     return () => newSocket.close();
-  }, [chats]);
+  }, [filteredChats]);
 
   useEffect(() => {
     const fetchAssignedUsers = async () => {
       try {
         // Get unique user IDs from chats
-        const userIds = [...new Set(chats
+        const userIds = [...new Set(filteredChats
           .map(chat => chat.assigned_user)
           .filter(id => id))];
 
@@ -169,15 +225,31 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     };
 
     fetchAssignedUsers();
-  }, [chats]);
+  }, [filteredChats]);
 
   // Add helper function to get badge color
   const getBadgeColor = (role) => {
     switch (role?.toLowerCase()) {
       case 'admin':
-        return '#52c41a'; // green
+        return '#f6ffed'; // light green background
       case 'user':
-        return '#fa8c16'; // orange
+        return '#fff7e6'; // light orange background
+      case 'manager':
+        return '#feffe6'; // light yellow background
+      default:
+        return '#f5f5f5'; // default gray
+    }
+  };
+
+  // Add getBorderColor function for tag borders
+  const getBorderColor = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return '#b7eb8f'; // green border
+      case 'user':
+        return '#ffd591'; // orange border
+      case 'manager':
+        return '#fffb8f'; // yellow border
       default:
         return '#d9d9d9'; // default gray
     }
@@ -196,6 +268,7 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     }
   };
 
+  // Update tabItems to include all six tabs
   const tabItems = [
     {
       key: 'unassigned',
@@ -208,14 +281,14 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
       label: 'Mine'
     },
     {
-      key: 'mentions',
-      icon: <MessageOutlined />,
-      label: 'Mentions'
-    },
-    {
       key: 'pinned',
       icon: <PushpinFilled />,
       label: 'Pinned'
+    },
+    {
+      key: 'mentions',
+      icon: <MessageOutlined />,
+      label: 'Mentions'
     },
     {
       key: 'open',
@@ -229,67 +302,92 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
     }
   ];
 
-  const renderItem = (chat) => (
-    <List.Item 
-      className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
-      onClick={() => {
-        onChatSelect(chat);
-        setUnreadCounts(prev => ({
-          ...prev,
-          [chat.id]: 0
-        }));
-        setBoldChats(prev => ({
-          ...prev,
-          [chat.phone]: false
-        }));
-      }}
-    >
-      <List.Item.Meta
-        avatar={
-          <Badge count={unreadCounts[chat.id] || 0}>
-            <Avatar>{chat.name?.[0]}</Avatar>
-          </Badge>
-        }
-        title={
-          <div className="chat-header">
-            <div className="chat-title-container">
-              <Text strong className="chat-name" style={{ 
+  const renderItem = (chat) => {
+    console.log('Rendering chat:', chat);
+    return (
+      <List.Item 
+        className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
+        onClick={() => {
+          onChatSelect(chat);
+          setUnreadCounts(prev => ({
+            ...prev,
+            [chat.id]: 0
+          }));
+          setBoldChats(prev => ({
+            ...prev,
+            [chat.phone]: false
+          }));
+        }}
+      >
+        <List.Item.Meta
+          avatar={
+            <Badge count={unreadCounts[chat.id] || 0}>
+              <Avatar>{chat.name?.[0]}</Avatar>
+            </Badge>
+          }
+          title={
+            <div className="chat-header">
+              <div className="chat-title-container">
+                <Text strong className="chat-name" style={{ 
+                  fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
+                }}>
+                  {chat.name}
+                </Text>
+                <Text type="secondary" className="chat-time">
+                  {formatTime(lastMessageTimes[chat.id])}
+                </Text>
+              </div>
+              <div className="chat-subtitle" style={{ 
+                marginBottom: '8px',
+                display: 'flex',
+                flexDirection: 'column',  // Stack items vertically
+                gap: '4px'  // Add space between tag and icon
+              }}> 
+                {chat.assigned_user && assignedUsers[chat.assigned_user] ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Tag 
+                      style={{ 
+                        margin: 0,
+                        padding: '2px 8px',
+                        fontSize: '12px',
+                        backgroundColor: getBadgeColor(assignedUsers[chat.assigned_user].role),
+                        border: `1px solid ${getBorderColor(assignedUsers[chat.assigned_user].role)}`,
+                        borderRadius: '4px'
+                      }}
+                    >
+                      {assignedUsers[chat.assigned_user].name}
+                    </Tag>
+                  </div>
+                ) : (
+                  <Text type="secondary" className="assigned-user">
+                    Unassigned
+                  </Text>
+                )}
+                {chat.whatsapp && (
+                  <WhatsAppOutlined 
+                    className="whatsapp-icon" 
+                    style={{ 
+                      color: '#25D366',
+                      fontSize: '16px'
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          }
+          description={
+            <div className="chat-description">
+              <Text className="chat-message" style={{ 
                 fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
               }}>
-                {chat.name}
-              </Text>
-              <Text type="secondary" className="chat-time">
-                {formatTime(lastMessageTimes[chat.id])}
+                {lastMessages[chat.id] || truncateToThreeWords(chat.lastMessage)}
               </Text>
             </div>
-            <div className="chat-subtitle">
-              {chat.assigned_user && assignedUsers[chat.assigned_user] ? (
-                <Badge
-                  color={getBadgeColor(assignedUsers[chat.assigned_user].role)}
-                  text={assignedUsers[chat.assigned_user].name}
-                  style={{ fontSize: '12px' }}
-                />
-              ) : (
-                <Text type="secondary" className="assigned-user">
-                  Unassigned
-                </Text>
-              )}
-              {chat.whatsapp && <WhatsAppOutlined className="whatsapp-icon" />}
-            </div>
-          </div>
-        }
-        description={
-          <div className="chat-description">
-            <Text className="chat-message" style={{ 
-              fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
-            }}>
-              {lastMessages[chat.id] || truncateToThreeWords(chat.lastMessage)}
-            </Text>
-          </div>
-        }
-      />
-    </List.Item>
-  );
+          }
+        />
+      </List.Item>
+    );
+  };
 
   return (
     <div className="chat-list-container">
@@ -308,10 +406,17 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
       {/* Tabs Section */}
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(key) => {
+          console.log('Tab clicked:', key);
+          setActiveTab(key);
+        }}
         className="chat-tabs"
         tabPosition="top"
-        tabBarStyle={{ margin: 0 }}
+        tabBarStyle={{ 
+          margin: 0,
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}
       >
         {tabItems.map(item => (
           <TabPane
@@ -322,12 +427,25 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
               </Tooltip>
             }
           >
-            <List
-              className="chat-list"
-              itemLayout="horizontal"
-              dataSource={chats}
-              renderItem={renderItem}
-            />
+            {(item.key === 'pinned' || item.key === 'mentions') ? (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '200px',
+                color: '#999'
+              }}>
+                No data available
+              </div>
+            ) : (
+              <List
+                className="chat-list"
+                itemLayout="horizontal"
+                dataSource={filteredChats}
+                renderItem={renderItem}
+                loading={loading}
+              />
+            )}
           </TabPane>
         ))}
       </Tabs>
