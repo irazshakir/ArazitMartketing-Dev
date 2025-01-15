@@ -38,6 +38,10 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
   const [assignedUsers, setAssignedUsers] = useState({});
   const [loading, setLoading] = useState(false);
   const [filteredChats, setFilteredChats] = useState([]);
+  const [tabBadges, setTabBadges] = useState({
+    unassigned: 0,
+    mine: 0
+  });
 
   // Add function to truncate message to three words
   const truncateToThreeWords = (message) => {
@@ -268,16 +272,60 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     }
   };
 
-  // Update tabItems to include all six tabs
+  // Add function to fetch unread counts
+  const fetchUnreadCounts = async () => {
+    try {
+      const userId = getLoggedInUserId();
+      const response = await axios.get(`/api/webhook/unread-counts?user_id=${userId}`);
+      if (response.data.success) {
+        setTabBadges(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching unread counts:', error);
+    }
+  };
+
+  // Update socket effect to handle unread counts
+  useEffect(() => {
+    const newSocket = io(BACKEND_URL);
+    setSocket(newSocket);
+
+    newSocket.on('unread_counts_update', (counts) => {
+      setTabBadges(counts);
+    });
+
+    // Fetch initial counts
+    fetchUnreadCounts();
+
+    return () => newSocket.close();
+  }, []);
+
+  // Update tabItems to include badges
   const tabItems = [
     {
       key: 'unassigned',
-      icon: <UserOutlined />,
+      icon: (
+        <Badge 
+          count={tabBadges.unassigned} 
+          size="small"
+          offset={[0, 0]}
+        >
+          <UserOutlined />
+        </Badge>
+      ),
       label: 'Unassigned'
     },
     {
       key: 'mine',
-      icon: <UserSwitchOutlined />,
+      icon: (
+        <Badge 
+          count={tabBadges.mine} 
+          size="small"
+          offset={[0, 0]}
+        >
+          <UserSwitchOutlined />
+        </Badge>
+      ),
       label: 'Mine'
     },
     {
@@ -302,22 +350,25 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     }
   ];
 
+  const handleChatSelect = async (chat) => {
+    try {
+      const userId = getLoggedInUserId();
+      // Mark messages as read
+      await axios.post(`/api/webhook/messages/${chat.id}/read?user_id=${userId}`);
+      
+      // Call the original onChatSelect
+      onChatSelect(chat);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const renderItem = (chat) => {
     console.log('Rendering chat:', chat);
     return (
       <List.Item 
         className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
-        onClick={() => {
-          onChatSelect(chat);
-          setUnreadCounts(prev => ({
-            ...prev,
-            [chat.id]: 0
-          }));
-          setBoldChats(prev => ({
-            ...prev,
-            [chat.phone]: false
-          }));
-        }}
+        onClick={() => handleChatSelect(chat)}
       >
         <List.Item.Meta
           avatar={
