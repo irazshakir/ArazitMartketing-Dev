@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Button, Avatar, Input, DatePicker, TimePicker, Select, Switch, message } from 'antd';
-import { WhatsAppOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { WhatsAppOutlined, PlusCircleOutlined, PhoneOutlined } from '@ant-design/icons';
 import styles from './ChatInfo.module.css';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -26,10 +26,7 @@ const ChatInfo = ({
     stageId: contact.lead_stage,
     leadSourceId: contact.lead_source_id,
     branchId: contact.branch_id,
-    followDate: contact.fu_date,
-    followHour: contact.fu_hour,
-    followMinutes: contact.fu_minutes,
-    followPeriod: contact.fu_period
+    followDate: contact.fu_date
   });
   const [isPackageModalVisible, setIsPackageModalVisible] = useState(false);
 
@@ -62,10 +59,7 @@ const ChatInfo = ({
           stageId: leadDetails.lead_stage || null,
           leadSourceId: leadDetails.lead_source_id || null,
           branchId: leadDetails.branch_id || null,
-          followDate: leadDetails.fu_date || null,
-          followHour: hour,
-          followMinutes: minutes,
-          followPeriod: period || 'AM'
+          followDate: leadDetails.fu_date || null
         }));
       } catch (error) {
         console.error('Error fetching lead details:', error);
@@ -103,16 +97,8 @@ const ChatInfo = ({
 
   const handleUpdate = async () => {
     try {
-      // Convert time to 24-hour format if needed
-      let hour = formData.followHour;
-      if (formData.followPeriod === 'PM' && hour !== 12) {
-        hour = hour + 12;
-      } else if (formData.followPeriod === 'AM' && hour === 12) {
-        hour = 0;
-      }
-
       const updateData = {
-        name: formData.name.trim(),  // Ensure name is properly formatted
+        name: formData.name.trim(),
         phone: formData.phone,
         email: formData.email,
         lead_product: formData.productId,
@@ -120,9 +106,6 @@ const ChatInfo = ({
         lead_source_id: formData.leadSourceId,
         branch_id: formData.branchId ? Number(formData.branchId) : null,
         fu_date: formData.followDate,
-        fu_hour: hour,
-        fu_minutes: formData.followMinutes || 0,
-        fu_period: formData.followPeriod,
         lead_active_status: isActive
       };
 
@@ -130,14 +113,14 @@ const ChatInfo = ({
       
       const response = await axios.patch(`/api/leads/${contact.id}`, updateData);
       
-      if (response.data.success) {
+      if (response.data && response.status === 200) {
         message.success('Lead updated successfully');
       } else {
-        message.warning('Update may not be complete');
+        throw new Error('Update failed');
       }
     } catch (error) {
       console.error('Failed to update lead:', error);
-      message.error('Failed to update lead');
+      message.error(error.response?.data?.message || 'Failed to update lead');
     }
   };
 
@@ -147,61 +130,6 @@ const ChatInfo = ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleTimeChange = (time) => {
-    console.log('Selected time:', time);
-
-    if (time) {
-      const hour = time.format('hh');
-      const minutes = time.format('mm');
-      const period = time.format('A');
-
-      console.log('Parsed time components:', { hour, minutes, period });
-
-      setFormData(prev => ({
-        ...prev,
-        followHour: parseInt(hour, 10),
-        followMinutes: parseInt(minutes, 10),
-        followPeriod: period
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        followHour: null,
-        followMinutes: null,
-        followPeriod: null
-      }));
-    }
-  };
-
-  const getTimeValue = () => {
-    const { followHour, followMinutes, followPeriod } = formData;
-    
-    console.log('Current time values:', { followHour, followMinutes, followPeriod });
-
-    if (followHour !== null && followMinutes !== null && followPeriod) {
-      try {
-        const hour = String(followHour).padStart(2, '0');
-        const minutes = String(followMinutes).padStart(2, '0');
-        const timeString = `${hour}:${minutes} ${followPeriod}`;
-        
-        console.log('Constructed time string:', timeString);
-        
-        const timeValue = dayjs(timeString, 'hh:mm A', true);
-        
-        if (timeValue.isValid()) {
-          return timeValue;
-        } else {
-          console.log('Invalid time value created');
-          return null;
-        }
-      } catch (error) {
-        console.error('Error creating time value:', error);
-        return null;
-      }
-    }
-    return null;
   };
 
   const renderServiceButton = () => {
@@ -279,14 +207,25 @@ const ChatInfo = ({
           {formData.name?.[0] || contact.name?.[0] || 'U'}
         </Avatar>
         <div className={styles.contactDetails}>
-          <Input
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="Enter name"
-            className={styles.nameInput}
-            bordered={false}
-            maxLength={50}
-          />
+          <div className={styles.nameContainer}>
+            <Input
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="Enter name"
+              className={styles.nameInput}
+              bordered={false}
+              maxLength={50}
+            />
+            <Button
+              type="text"
+              icon={<PhoneOutlined />}
+              className={styles.callButton}
+              onClick={() => {
+                // Future VOIP implementation
+                message.info('Call feature coming soon');
+              }}
+            />
+          </div>
           {contact.whatsapp && (
             <div className={styles.whatsappBadge}>
               <WhatsAppOutlined className={styles.whatsappIcon} />
@@ -318,31 +257,16 @@ const ChatInfo = ({
         />
       </div>
 
-      {/* Follow Date/Time */}
+      {/* Follow Date */}
       <div className={styles.infoSection}>
-        <Text type="secondary">Follow Date/Time</Text>
-        <div className={styles.dateTimeContainer}>
-          <DatePicker 
-            className={styles.datePicker}
-            format="DD/MM/YYYY"
-            value={formData.followDate ? dayjs(formData.followDate) : null}
-            onChange={(date) => handleInputChange('followDate', date ? date.format('YYYY-MM-DD') : null)}
-            style={{ width: '50%' }}
-          />
-          <TimePicker 
-            className={styles.timePicker}
-            format="hh:mm A"
-            use12Hours={true}
-            value={getTimeValue()}
-            onChange={handleTimeChange}
-            placeholder="Select time"
-            style={{ width: '50%' }}
-            showNow={false}
-            hideDisabledOptions={true}
-            minuteStep={1}
-            allowClear={true}
-          />
-        </div>
+        <Text type="secondary">Follow Date</Text>
+        <DatePicker 
+          className={styles.datePicker}
+          format="DD/MM/YYYY"
+          value={formData.followDate ? dayjs(formData.followDate) : null}
+          onChange={(date) => handleInputChange('followDate', date ? date.format('YYYY-MM-DD') : null)}
+          style={{ width: '100%' }}
+        />
       </div>
 
       {/* Lead Info */}

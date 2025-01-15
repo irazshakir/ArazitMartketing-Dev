@@ -136,5 +136,32 @@
 
 .serviceButton:hover {
   background-color: #f5f5f5;
+}
+
+.nameContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callButton {
+  padding: 4px 8px;
+  height: 32px;
+  color: #1890ff;
+  transition: all 0.3s;
+}
+
+.callButton:hover {
+  color: #40a9ff;
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.nameInput {
+  flex: 1;
+}
+
+.contactDetails {
+  flex: 1;
+  margin-left: 12px;
 } 
 

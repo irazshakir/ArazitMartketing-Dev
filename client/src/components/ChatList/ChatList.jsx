@@ -12,9 +12,18 @@ import {
   CheckCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import './ChatList.styles.css';
 import io from 'socket.io-client';
 import { BACKEND_URL } from '../../constants/config';
+import axios from 'axios';
+
+// Initialize dayjs plugins
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { Text } = Typography;
 const { TabPane } = Tabs;
@@ -23,62 +32,168 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
   const [activeTab, setActiveTab] = useState('unassigned');
   const [unreadCounts, setUnreadCounts] = useState({});
   const [socket, setSocket] = useState(null);
+  const [boldChats, setBoldChats] = useState({});
+  const [lastMessageTimes, setLastMessageTimes] = useState({});
+  const [lastMessages, setLastMessages] = useState({});
+  const [assignedUsers, setAssignedUsers] = useState({});
+
+  // Add function to truncate message to three words
+  const truncateToThreeWords = (message) => {
+    if (!message) return '';
+    const words = message.split(' ');
+    return words.slice(0, 3).join(' ') + (words.length > 3 ? '...' : '');
+  };
+
+  useEffect(() => {
+    const fetchLastMessageTimes = async () => {
+      try {
+        const promises = chats.map(chat => 
+          axios.get(`/api/messages/last-message-time/${chat.id}`)
+        );
+        
+        const responses = await Promise.all(promises);
+        
+        const times = {};
+        const messages = {};
+        responses.forEach((response, index) => {
+          if (response.data && response.data.timestamp) {
+            times[chats[index].id] = response.data.timestamp;
+            messages[chats[index].id] = truncateToThreeWords(response.data.message);
+          }
+        });
+        
+        setLastMessageTimes(times);
+        setLastMessages(messages);
+      } catch (error) {
+        console.error('Error fetching last message times:', error);
+      }
+    };
+
+    if (chats.length > 0) {
+      fetchLastMessageTimes();
+    }
+  }, [chats]);
 
   useEffect(() => {
     const newSocket = io(BACKEND_URL);
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
-      console.log('🔌 Socket connected');
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
-    });
-
     newSocket.on('new_whatsapp_message', (message) => {
       console.log('📩 New message received in ChatList:', message);
-      console.log('Current chats:', chats);
+      
+      // Update unread counts and bold status
+      setUnreadCounts(prev => ({
+        ...prev,
+        [message.from]: (prev[message.from] || 0) + 1
+      }));
 
-      setUnreadCounts(prev => {
-        const newCounts = {
-          ...prev,
-          [message.from]: (prev[message.from] || 0) + 1
-        };
-        console.log('Updated unread counts:', newCounts);
-        return newCounts;
-      });
+      setBoldChats(prev => ({
+        ...prev,
+        [message.from]: true
+      }));
 
-      const existingChat = chats.find(chat => chat.phone === message.from);
-      console.log('Existing chat found:', existingChat);
+      // Find existing chat
+      const existingChatIndex = chats.findIndex(chat => 
+        chat.phone === message.from || chat.id === message.leadId
+      );
 
-      if (!existingChat) {
+      const truncatedMessage = truncateToThreeWords(message.text.body);
+
+      if (existingChatIndex === -1) {
+        // Create new chat
         const newChat = {
           id: message.leadId,
           name: message.name,
           phone: message.from,
-          time: message.timestamp,
-          lastMessage: message.text.body,
-          whatsapp: true
+          lastMessage: truncatedMessage,
+          whatsapp: true,
+          assigned_user: message.assigned_user || 'Unassigned'
         };
-        console.log('Creating new chat:', newChat);
         chats.unshift(newChat);
       } else {
-        console.log('Updating existing chat:', message.from);
-        existingChat.lastMessage = message.text.body;
-        existingChat.time = message.timestamp;
+        // Update existing chat
+        const updatedChat = {
+          ...chats[existingChatIndex],
+          lastMessage: truncatedMessage
+        };
+        
+        // Remove chat from current position and add to beginning
+        chats.splice(existingChatIndex, 1);
+        chats.unshift(updatedChat);
       }
+
+      // Update last message and time
+      setLastMessageTimes(prev => ({
+        ...prev,
+        [message.leadId]: new Date().toISOString()
+      }));
+      
+      setLastMessages(prev => ({
+        ...prev,
+        [message.leadId]: truncatedMessage
+      }));
     });
 
-    return () => {
-      console.log('🔌 Closing socket connection');
-      newSocket.close();
-    };
+    return () => newSocket.close();
   }, [chats]);
+
+  useEffect(() => {
+    const fetchAssignedUsers = async () => {
+      try {
+        // Get unique user IDs from chats
+        const userIds = [...new Set(chats
+          .map(chat => chat.assigned_user)
+          .filter(id => id))];
+
+        if (userIds.length === 0) return;
+
+        // Use the same API endpoint as ChatBox
+        const response = await axios.get('/api/users?active=true');
+        const users = response.data;
+
+        // Create a map of user details
+        const userMap = {};
+        users.forEach(user => {
+          if (userIds.includes(user.id)) {
+            userMap[user.id] = {
+              name: user.name,
+              role: user.role
+            };
+          }
+        });
+
+        setAssignedUsers(userMap);
+      } catch (error) {
+        console.error('Error fetching assigned users:', error);
+      }
+    };
+
+    fetchAssignedUsers();
+  }, [chats]);
+
+  // Add helper function to get badge color
+  const getBadgeColor = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return '#52c41a'; // green
+      case 'user':
+        return '#fa8c16'; // orange
+      default:
+        return '#d9d9d9'; // default gray
+    }
+  };
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
-    return dayjs(timestamp).format('HH:mm A');
+    
+    try {
+      const time = timestamp.split('T')[1].split('.')[0];
+      const [hours, minutes] = time.split(':');
+      return `${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '';
+    }
   };
 
   const tabItems = [
@@ -123,6 +238,10 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
           ...prev,
           [chat.id]: 0
         }));
+        setBoldChats(prev => ({
+          ...prev,
+          [chat.phone]: false
+        }));
       }}
     >
       <List.Item.Meta
@@ -134,32 +253,38 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }) => {
         title={
           <div className="chat-header">
             <div className="chat-title-container">
-              <Text strong className="chat-name">{chat.name}</Text>
+              <Text strong className="chat-name" style={{ 
+                fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
+              }}>
+                {chat.name}
+              </Text>
               <Text type="secondary" className="chat-time">
-                {formatTime(chat.time)}
+                {formatTime(lastMessageTimes[chat.id])}
               </Text>
             </div>
-            <WhatsAppOutlined className="whatsapp-icon" />
+            <div className="chat-subtitle">
+              {chat.assigned_user && assignedUsers[chat.assigned_user] ? (
+                <Badge
+                  color={getBadgeColor(assignedUsers[chat.assigned_user].role)}
+                  text={assignedUsers[chat.assigned_user].name}
+                  style={{ fontSize: '12px' }}
+                />
+              ) : (
+                <Text type="secondary" className="assigned-user">
+                  Unassigned
+                </Text>
+              )}
+              {chat.whatsapp && <WhatsAppOutlined className="whatsapp-icon" />}
+            </div>
           </div>
         }
         description={
           <div className="chat-description">
-            <Text className="chat-message">
-              {chat.lastMessage}
+            <Text className="chat-message" style={{ 
+              fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
+            }}>
+              {lastMessages[chat.id] || truncateToThreeWords(chat.lastMessage)}
             </Text>
-            {chat.assigned_user_name && (
-              <div className="agent-info">
-                <Avatar 
-                  size="small" 
-                  className="agent-avatar"
-                >
-                  {chat.assigned_user_name.charAt(0)}
-                </Avatar>
-                <Text type="secondary" className="agent-name">
-                  {chat.assigned_user_name}
-                </Text>
-              </div>
-            )}
           </div>
         }
       />
