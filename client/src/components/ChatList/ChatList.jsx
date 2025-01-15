@@ -291,7 +291,11 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     setSocket(newSocket);
 
     newSocket.on('unread_counts_update', (counts) => {
-      setTabBadges(counts);
+      setTabBadges({
+        unassigned: counts.unassigned,
+        mine: counts.mine
+      });
+      setUnreadCounts(counts.perChat);
     });
 
     // Fetch initial counts
