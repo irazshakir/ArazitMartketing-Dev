@@ -42,6 +42,15 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     unassigned: 0,
     mine: 0
   });
+  const [error, setError] = useState(null);
+
+  if (error) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center' }}>
+        <Text type="danger">Error loading chats. Please refresh the page.</Text>
+      </div>
+    );
+  }
 
   // Add function to truncate message to three words
   const truncateToThreeWords = (message) => {
@@ -141,15 +150,10 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     newSocket.on('new_whatsapp_message', (message) => {
       console.log('📩 New message received in ChatList:', message);
       
-      // Update unread counts and bold status
+      // Safely update unread counts
       setUnreadCounts(prev => ({
         ...prev,
-        [message.from]: (prev[message.from] || 0) + 1
-      }));
-
-      setBoldChats(prev => ({
-        ...prev,
-        [message.from]: true
+        [message.leadId]: (prev[message.leadId] || 0) + 1
       }));
 
       // Find existing chat
@@ -157,45 +161,40 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
         chat.phone === message.from || chat.id === message.leadId
       );
 
-      const truncatedMessage = truncateToThreeWords(message.text.body);
-
       if (existingChatIndex === -1) {
         // Create new chat
         const newChat = {
           id: message.leadId,
-          name: message.name,
+          name: message.name || `WhatsApp Lead (${message.from})`,
           phone: message.from,
-          lastMessage: truncatedMessage,
+          lastMessage: message.text.body,
           whatsapp: true,
-          assigned_user: message.assigned_user || 'Unassigned'
+          assigned_user: message.assigned_user || null
         };
-        filteredChats.unshift(newChat);
+        setFilteredChats(prev => [newChat, ...prev]);
       } else {
         // Update existing chat
-        const updatedChat = {
-          ...filteredChats[existingChatIndex],
-          lastMessage: truncatedMessage
-        };
-        
-        // Remove chat from current position and add to beginning
-        filteredChats.splice(existingChatIndex, 1);
-        filteredChats.unshift(updatedChat);
+        setFilteredChats(prev => {
+          const newChats = [...prev];
+          newChats[existingChatIndex] = {
+            ...newChats[existingChatIndex],
+            lastMessage: message.text.body
+          };
+          return newChats;
+        });
       }
 
-      // Update last message and time
-      setLastMessageTimes(prev => ({
+      setBoldChats(prev => ({
         ...prev,
-        [message.leadId]: new Date().toISOString()
-      }));
-      
-      setLastMessages(prev => ({
-        ...prev,
-        [message.leadId]: truncatedMessage
+        [message.from]: true
       }));
     });
 
+    // Fetch initial unread counts
+    fetchUnreadCounts();
+
     return () => newSocket.close();
-  }, [filteredChats]);
+  }, []);
 
   useEffect(() => {
     const fetchAssignedUsers = async () => {
@@ -291,11 +290,12 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     setSocket(newSocket);
 
     newSocket.on('unread_counts_update', (counts) => {
+      console.log('Received unread counts update:', counts); // Debug log
       setTabBadges({
-        unassigned: counts.unassigned,
-        mine: counts.mine
+        unassigned: counts.unassigned || 0,
+        mine: counts.mine || 0
       });
-      setUnreadCounts(counts.perChat);
+      setUnreadCounts(counts.perChat || {});
     });
 
     // Fetch initial counts
@@ -360,6 +360,12 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
       // Mark messages as read
       await axios.post(`/api/webhook/messages/${chat.id}/read?user_id=${userId}`);
       
+      // Reset bold text for the selected chat
+      setBoldChats(prev => ({
+        ...prev,
+        [chat.phone]: false
+      }));
+      
       // Call the original onChatSelect
       onChatSelect(chat);
     } catch (error) {
@@ -369,6 +375,16 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
 
   const renderItem = (chat) => {
     console.log('Rendering chat:', chat);
+    console.log('Unread counts:', unreadCounts);
+    
+    if (!chat || !chat.id) {
+      console.log('Invalid chat object:', chat);
+      return null;
+    }
+
+    const unreadCount = unreadCounts[chat.id] || 0;
+    const avatarText = chat.name ? chat.name.charAt(0).toUpperCase() : '?';
+    
     return (
       <List.Item 
         className={`chat-list-item ${selectedChatId === chat.id ? 'selected' : ''}`}
@@ -376,8 +392,15 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
       >
         <List.Item.Meta
           avatar={
-            <Badge count={unreadCounts[chat.id] || 0}>
-              <Avatar>{chat.name?.[0]}</Avatar>
+            <Badge 
+              count={unreadCount}
+              size="small"
+              offset={[8, 0]}
+              style={{ backgroundColor: '#ff4d4f' }}
+            >
+              <Avatar style={{ backgroundColor: '#1890ff' }}>
+                {avatarText}
+              </Avatar>
             </Badge>
           }
           title={
@@ -386,7 +409,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
                 <Text strong className="chat-name" style={{ 
                   fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
                 }}>
-                  {chat.name}
+                  {chat.name || 'Unknown Contact'}
                 </Text>
                 <Text type="secondary" className="chat-time">
                   {formatTime(lastMessageTimes[chat.id])}
@@ -395,8 +418,8 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
               <div className="chat-subtitle" style={{ 
                 marginBottom: '8px',
                 display: 'flex',
-                flexDirection: 'column',  // Stack items vertically
-                gap: '4px'  // Add space between tag and icon
+                flexDirection: 'column',
+                gap: '4px'
               }}> 
                 {chat.assigned_user && assignedUsers[chat.assigned_user] ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -435,7 +458,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
               <Text className="chat-message" style={{ 
                 fontWeight: boldChats[chat.phone] ? 'bold' : 'normal' 
               }}>
-                {lastMessages[chat.id] || truncateToThreeWords(chat.lastMessage)}
+                {lastMessages[chat.id] || truncateToThreeWords(chat.lastMessage) || 'No message'}
               </Text>
             </div>
           }
@@ -444,68 +467,74 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     );
   };
 
-  return (
-    <div className="chat-list-container">
-      {/* Search and Filter Section */}
-      <div className="search-filter-section">
-        <Input
-          placeholder="Search conversations..."
-          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-          className="search-input"
-        />
-        <Tooltip title="Filter">
-          <FilterOutlined className="filter-icon" />
-        </Tooltip>
-      </div>
+  try {
+    return (
+      <div className="chat-list-container">
+        {/* Search and Filter Section */}
+        <div className="search-filter-section">
+          <Input
+            placeholder="Search conversations..."
+            prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+            className="search-input"
+          />
+          <Tooltip title="Filter">
+            <FilterOutlined className="filter-icon" />
+          </Tooltip>
+        </div>
 
-      {/* Tabs Section */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => {
-          console.log('Tab clicked:', key);
-          setActiveTab(key);
-        }}
-        className="chat-tabs"
-        tabPosition="top"
-        tabBarStyle={{ 
-          margin: 0,
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}
-      >
-        {tabItems.map(item => (
-          <TabPane
-            key={item.key}
-            tab={
-              <Tooltip title={item.label}>
-                {item.icon}
-              </Tooltip>
-            }
-          >
-            {(item.key === 'pinned' || item.key === 'mentions') ? (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '200px',
-                color: '#999'
-              }}>
-                No data available
-              </div>
-            ) : (
-              <List
-                className="chat-list"
-                itemLayout="horizontal"
-                dataSource={filteredChats}
-                renderItem={renderItem}
-                loading={loading}
-              />
-            )}
-          </TabPane>
-        ))}
-      </Tabs>
-    </div>
-  );
+        {/* Tabs Section */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => {
+            console.log('Tab clicked:', key);
+            setActiveTab(key);
+          }}
+          className="chat-tabs"
+          tabPosition="top"
+          tabBarStyle={{ 
+            margin: 0,
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
+        >
+          {tabItems.map(item => (
+            <TabPane
+              key={item.key}
+              tab={
+                <Tooltip title={item.label}>
+                  {item.icon}
+                </Tooltip>
+              }
+            >
+              {(item.key === 'pinned' || item.key === 'mentions') ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  color: '#999'
+                }}>
+                  No data available
+                </div>
+              ) : (
+                <List
+                  className="chat-list"
+                  itemLayout="horizontal"
+                  dataSource={filteredChats}
+                  renderItem={renderItem}
+                  loading={loading}
+                />
+              )}
+            </TabPane>
+          ))}
+        </Tabs>
+      </div>
+    );
+  } catch (err) {
+    console.error('Render error:', err);
+    setError(err);
+    return null;
+  }
 };
 
 export default ChatList;
