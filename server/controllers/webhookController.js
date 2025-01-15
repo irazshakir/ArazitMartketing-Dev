@@ -55,8 +55,13 @@ export const receiveMessage = async (req, res) => {
 
         console.log('🔍 Existing lead:', lead);
 
-        // If lead doesn't exist, create one
+        // Store the message with appropriate lead information
+        const timestamp = messageData.timestamp 
+          ? new Date(messageData.timestamp * 1000)
+          : new Date();
+
         if (!lead) {
+          // Create new lead only if it doesn't exist
           console.log('➕ Creating new lead for:', phone);
           const currentDate = new Date();
           
@@ -65,9 +70,9 @@ export const receiveMessage = async (req, res) => {
             .insert([{
               name: `WhatsApp Lead (${phone})`,
               phone: phone,
-              assigned_user: 1, // Admin user
-              lead_source_id: 7, // WhatsApp source
-              lead_stage: 1, // Initial stage
+              assigned_user: null, // Explicitly set as null for unassigned
+              lead_source_id: 7,
+              lead_stage: 1,
               lead_active_status: true,
               fu_date: currentDate,
               fu_hour: null,
@@ -89,18 +94,13 @@ export const receiveMessage = async (req, res) => {
         }
 
         // Store the message
-        console.log('💾 Storing message for lead:', lead.id);
-        const timestamp = messageData.timestamp 
-          ? new Date(messageData.timestamp * 1000) // Convert WhatsApp timestamp to Date
-          : new Date();
-
         const { error: messageError } = await supabase
           .from('messages')
           .insert([{
             lead_id: lead.id,
             phone: phone,
             message: messageData.text?.body,
-            timestamp: timestamp.toISOString(), // Store as ISO string
+            timestamp: timestamp.toISOString(),
             is_outgoing: false
           }]);
 
@@ -109,11 +109,12 @@ export const receiveMessage = async (req, res) => {
           throw messageError;
         }
 
-        // Emit socket event with lead info
+        // Emit socket event with lead info and assigned status
         const socketData = {
           ...messageData,
           leadId: lead.id,
-          name: lead.name
+          name: lead.name,
+          assigned_user: lead.assigned_user // Include assigned_user in socket data
         };
         console.log('🔌 Emitting socket event:', socketData);
         req.app.io.emit('new_whatsapp_message', socketData);
@@ -228,7 +229,7 @@ export const getLastMessageTime = async (req, res) => {
   }
 };
 
-// Add this new controller function for filtered chats
+// Get filtered chats with strict filtering
 export const getFilteredChats = async (req, res) => {
   try {
     const { filter } = req.query;
@@ -236,8 +237,7 @@ export const getFilteredChats = async (req, res) => {
 
     console.log('Starting getFilteredChats with filter:', filter);
 
-    // Update the query to match your schema
-    let { data: chats, error } = await supabase
+    let query = supabase
       .from('leads')
       .select(`
         *,
@@ -252,53 +252,46 @@ export const getFilteredChats = async (req, res) => {
           timestamp,
           is_outgoing
         )
-      `)
-      .order('updated_at', { ascending: false });
+      `);
+
+    // Apply strict filters at database level
+    switch (filter) {
+      case 'unassigned':
+        console.log('Filtering strictly unassigned chats');
+        query = query.is('assigned_user', null);
+        break;
+
+      case 'mine':
+        console.log('Filtering my chats for user_id:', user_id);
+        query = query.eq('assigned_user', user_id);
+        break;
+
+      case 'open':
+        console.log('Filtering open chats');
+        query = query.eq('lead_active_status', true);
+        break;
+
+      case 'resolved':
+        console.log('Filtering resolved chats');
+        query = query.eq('lead_active_status', false);
+        break;
+    }
+
+    // Add ordering by latest update
+    query = query.order('updated_at', { ascending: false });
+
+    const { data: chats, error } = await query;
 
     if (error) {
       console.error('Supabase query error:', error);
       throw error;
     }
 
-    console.log('Initial chats fetched:', chats?.length);
-
-    // Apply filters after fetching data
-    let filteredChats = chats;
-
-    switch (filter) {
-      case 'unassigned':
-        console.log('Filtering unassigned chats');
-        filteredChats = chats.filter(chat => !chat.assigned_user);
-        break;
-
-      case 'mine':
-        console.log('Filtering my chats for user_id:', user_id);
-        const userIdNum = parseInt(user_id);
-        filteredChats = chats.filter(chat => chat.assigned_user === userIdNum);
-        break;
-
-      case 'open':
-        console.log('Filtering open chats');
-        filteredChats = chats.filter(chat => chat.lead_active_status === true);
-        break;
-
-      case 'resolved':
-        console.log('Filtering resolved chats');
-        filteredChats = chats.filter(chat => chat.lead_active_status === false);
-        break;
-    }
-
-    console.log('Filtered chats count:', filteredChats?.length);
+    console.log(`Found ${chats?.length} chats for filter: ${filter}`);
 
     res.status(200).json({
       success: true,
-      data: filteredChats,
-      debug: {
-        totalChats: chats?.length,
-        filteredChats: filteredChats?.length,
-        filter,
-        userId: user_id
-      }
+      data: chats
     });
 
   } catch (error) {
