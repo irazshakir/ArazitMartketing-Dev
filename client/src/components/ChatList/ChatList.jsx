@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { List, Avatar, Typography, Space, Badge, Input, Tooltip, Tabs, Tag } from 'antd';
 import { 
   WhatsAppOutlined, 
@@ -19,6 +19,7 @@ import './ChatList.styles.css';
 import io from 'socket.io-client';
 import { BACKEND_URL } from '../../constants/config';
 import axios from 'axios';
+import { debounce } from 'lodash';
 
 // Initialize dayjs plugins
 dayjs.extend(relativeTime);
@@ -43,6 +44,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     mine: 0
   });
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (error) {
     return (
@@ -66,19 +68,16 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
   };
 
   // Update fetchFilteredChats function with debug logs
-  const fetchFilteredChats = async (filter) => {
+  const fetchFilteredChats = async (filter, search = '') => {
     setLoading(true);
     try {
       const userId = getLoggedInUserId();
-      console.log('Fetching chats with filter:', filter);
-      console.log('User ID:', userId);
+      console.log('Fetching chats with filter:', filter, 'search:', search);
 
-      const response = await axios.get(`/api/webhook/filtered-chats?filter=${filter}&user_id=${userId}`);
-      console.log('API Response:', response.data);
+      const response = await axios.get(`/api/webhook/filtered-chats?filter=${filter}&user_id=${userId}&searchQuery=${search}`);
       
       if (response.data.success) {
         setFilteredChats(response.data.data);
-        console.log('Filtered Chats:', response.data.data);
         
         // Fetch last messages for new chats
         const promises = response.data.data.map(chat => 
@@ -86,7 +85,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
         );
         
         const messageResponses = await Promise.all(promises);
-        console.log('Message Responses:', messageResponses);
         
         const times = {};
         const messages = {};
@@ -107,11 +105,26 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     }
   };
 
+  // Add debounced search handler
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      fetchFilteredChats(activeTab, value);
+    }, 300),
+    [activeTab]
+  );
+
+  // Update search input handler
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    debouncedSearch(value);
+  };
+
   // Add useEffect to fetch chats when tab changes
   useEffect(() => {
-    console.log('Tab changed to:', activeTab);
-    fetchFilteredChats(activeTab);
-  }, [activeTab]);
+    console.log('Tab or search changed:', activeTab, searchQuery);
+    fetchFilteredChats(activeTab, searchQuery);
+  }, [activeTab]); // Remove searchQuery from dependencies since we're using debounce
 
   useEffect(() => {
     const fetchLastMessageTimes = async () => {
@@ -476,6 +489,9 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
             placeholder="Search conversations..."
             prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
             className="search-input"
+            value={searchQuery}
+            onChange={handleSearch}
+            allowClear
           />
           <Tooltip title="Filter">
             <FilterOutlined className="filter-icon" />
