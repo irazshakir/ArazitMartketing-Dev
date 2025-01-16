@@ -25,17 +25,30 @@ const DashboardController = {
         endDate 
       }); // Debug log
 
-      const stats = await DashboardModel.getDashboardStats({
-        currentDate,
-        currentMonthStart,
-        branchId: branchId || 'all',
-        startDate: hasValidDateRange ? startDate : undefined,
-        endDate: hasValidDateRange ? endDate : undefined
-      });
+      // Get dashboard stats
+      const [stats, leadsVsClosedStats] = await Promise.all([
+        DashboardModel.getDashboardStats({
+          currentDate,
+          currentMonthStart,
+          branchId: branchId || 'all',
+          startDate: hasValidDateRange ? startDate : undefined,
+          endDate: hasValidDateRange ? endDate : undefined
+        }),
+        DashboardModel.getLeadsVsClosedStats({
+          currentMonthStart,
+          currentDate,
+          branchId: branchId || 'all',
+          startDate: hasValidDateRange ? startDate : undefined,
+          endDate: hasValidDateRange ? endDate : undefined
+        })
+      ]);
 
       res.json({
         success: true,
-        data: stats
+        data: {
+          ...stats,
+          leadsVsClosedStats
+        }
       });
     } catch (error) {
       console.error('Controller error:', error);
