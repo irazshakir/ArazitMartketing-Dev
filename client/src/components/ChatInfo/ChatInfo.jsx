@@ -85,8 +85,6 @@ const ChatInfo = ({
         setStages(stagesRes.data);
         setLeadSources(sourcesRes.data);
         setBranches(branchesRes.data);
-
-        console.log('Fetched branches:', branchesRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -109,8 +107,6 @@ const ChatInfo = ({
         lead_active_status: isActive
       };
 
-      console.log('Updating lead with data:', updateData);
-      
       const response = await axios.patch(`/api/leads/${contact.id}`, updateData);
       
       if (response.data && response.status === 200) {
@@ -125,7 +121,6 @@ const ChatInfo = ({
   };
 
   const handleInputChange = (field, value) => {
-    console.log(`Updating ${field} with value:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -333,7 +328,6 @@ const ChatInfo = ({
           className={styles.select}
           value={formData.branchId}
           onChange={(value) => {
-            console.log('Selected branch value:', value);
             handleInputChange('branchId', value);
           }}
           allowClear

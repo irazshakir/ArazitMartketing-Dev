@@ -195,7 +195,6 @@ const ChatBox = ({
     setSocket(newSocket);
 
     newSocket.on('new_whatsapp_message', (messageData) => {
-      console.log('ChatBox received message:', messageData);
       const timestamp = messageData.timestamp 
         ? new Date(messageData.timestamp * 1000).getTime() / 1000  // Convert to Unix timestamp
         : Math.floor(Date.now() / 1000);

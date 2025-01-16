@@ -163,39 +163,39 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     newSocket.on('new_whatsapp_message', (message) => {
       console.log('📩 New message received in ChatList:', message);
       
-      // Safely update unread counts
       setUnreadCounts(prev => ({
         ...prev,
-        [message.leadId]: (prev[message.leadId] || 0) + 1
+        [message.leadId]: message.unreadCount || prev[message.leadId] || 0
       }));
 
-      // Find existing chat
-      const existingChatIndex = filteredChats.findIndex(chat => 
-        chat.phone === message.from || chat.id === message.leadId
-      );
+      setFilteredChats(prev => {
+        // Find existing chat
+        const existingChatIndex = prev.findIndex(chat => chat.id === message.leadId);
 
-      if (existingChatIndex === -1) {
-        // Create new chat
-        const newChat = {
-          id: message.leadId,
-          name: message.name || `WhatsApp Lead (${message.from})`,
-          phone: message.from,
-          lastMessage: message.text.body,
-          whatsapp: true,
-          assigned_user: message.assigned_user || null
-        };
-        setFilteredChats(prev => [newChat, ...prev]);
-      } else {
-        // Update existing chat
-        setFilteredChats(prev => {
-          const newChats = [...prev];
-          newChats[existingChatIndex] = {
-            ...newChats[existingChatIndex],
-            lastMessage: message.text.body
+        if (existingChatIndex === -1) {
+          // Only create new chat if it doesn't exist
+          const newChat = {
+            id: message.leadId,
+            name: message.name || `WhatsApp Lead (${message.from})`,
+            phone: message.from,
+            lastMessage: message.text.body,
+            whatsapp: true,
+            assigned_user: message.assigned_user || null
           };
-          return newChats;
-        });
-      }
+          return [newChat, ...prev];
+        } else {
+          // Update existing chat in place
+          return prev.map((chat, index) => {
+            if (index === existingChatIndex) {
+              return {
+                ...chat,
+                lastMessage: message.text.body
+              };
+            }
+            return chat;
+          });
+        }
+      });
 
       setBoldChats(prev => ({
         ...prev,
@@ -207,7 +207,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     fetchUnreadCounts();
 
     return () => newSocket.close();
-  }, []);
+  }, []);  // Keep empty dependency array since we're using functional updates
 
   useEffect(() => {
     const fetchAssignedUsers = async () => {
@@ -502,7 +502,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
         <Tabs
           activeKey={activeTab}
           onChange={(key) => {
-            console.log('Tab clicked:', key);
             setActiveTab(key);
           }}
           className="chat-tabs"
