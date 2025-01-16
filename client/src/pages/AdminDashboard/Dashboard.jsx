@@ -15,6 +15,7 @@ import { Area } from '@ant-design/charts';
 import './styles.css';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import moment from 'moment';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -81,13 +82,17 @@ const AdminDashboard = () => {
         endDate
       });
 
-      const response = await axios.get('/api/dashboard/stats', {
-        params: {
-          branchId: selectedBranch,
-          startDate,
-          endDate
-        }
-      });
+      const params = {
+        branchId: selectedBranch
+      };
+
+      // Only add date parameters if they exist
+      if (startDate && endDate) {
+        params.startDate = startDate;
+        params.endDate = endDate;
+      }
+
+      const response = await axios.get('/api/dashboard/stats', { params });
 
       if (response.data?.success) {
         setDashboardStats(response.data.data);
@@ -108,6 +113,24 @@ const AdminDashboard = () => {
   const handleBranchChange = (value) => {
     setSelectedBranch(value);
     // You can add additional logic here to refresh dashboard data based on selected branch
+  };
+
+  const handleDateRangeChange = (dates) => {
+    if (!dates || dates.length !== 2) {
+      fetchDashboardStats(); // Reset to default stats
+      return;
+    }
+
+    const [start, end] = dates;
+    const startDate = start.format('YYYY-MM-DD');
+    const endDate = end.format('YYYY-MM-DD');
+
+    console.log('Date range selected:', { startDate, endDate }); // Debug log
+
+    fetchDashboardStats({
+      startDate,
+      endDate
+    });
   };
 
   const cardData = [
@@ -173,7 +196,10 @@ const AdminDashboard = () => {
           />
         </div>
         <div className="filter-group">
-          <RangePicker />
+          <RangePicker 
+            onChange={handleDateRangeChange}
+            format="YYYY-MM-DD"
+          />
         </div>
       </div>
 
