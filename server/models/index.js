@@ -4,9 +4,9 @@ import CustomUmrahHotelModel from './CustomUmrahHotelModel.js';
 import CustomUmrahServiceModel from './CustomUmrahServiceModel.js';
 import CustomUmrahPriceModel from './CustomUmrahPriceModel.js';
 import InvoiceModel from './InvoiceModel.js';
+import DashboardModel from './DashboardModel.js';
 
-
-
+// Direct model definitions
 export const ProductModel = {
   findAll: async ({ where } = {}) => {
     try {
@@ -369,10 +369,12 @@ export const BranchModel = {
   }
 };
 
+// Export imported models
 export {
   CustomUmrahHotelModel,
   CustomUmrahServiceModel,
   CustomUmrahPriceModel,
-  InvoiceModel
+  InvoiceModel,
+  DashboardModel
 };
 

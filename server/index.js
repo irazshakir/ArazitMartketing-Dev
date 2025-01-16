@@ -21,6 +21,7 @@ import customUmrahRoutes from './routes/customUmrah.js';
 import invoiceRoutes from './routes/invoices.js';
 import branchRoutes from './routes/branches.js';
 import webhookRoutes from './routes/webhookRoutes.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 // Initialize dotenv
 dotenv.config();
@@ -55,6 +56,7 @@ app.use('/api', customUmrahRoutes);
 app.use('/api', invoiceRoutes);
 app.use('/api', branchRoutes);
 app.use('/api', webhookRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
