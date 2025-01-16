@@ -16,6 +16,7 @@ import './styles.css';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
+import { Column } from '@ant-design/plots';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -24,11 +25,18 @@ const AdminDashboard = () => {
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [selectedTimeRange, setSelectedTimeRange] = useState('7days');
   const [dashboardStats, setDashboardStats] = useState({
     todayLeads: 0,
     newCustomers: 0,
     todayFollowups: 0,
-    hotLeads: 0
+    hotLeads: 0,
+    activeLeads: 0,
+    hotActiveLeads: 0,
+    salesLeads: 0,
+    totalPeriodLeads: 0,
+    periodStart: '',
+    periodEnd: ''
   });
 
   // Fetch branches and initial stats on component mount
@@ -71,19 +79,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchDashboardStats = async (dateRange = {}) => {
+  const fetchDashboardStats = async (options = {}) => {
     try {
       setLoading(true);
-      const { startDate, endDate } = dateRange;
+      const { startDate, endDate, timeRange } = options;
       
-      console.log('Fetching stats with params:', {
-        branchId: selectedBranch,
-        startDate,
-        endDate
-      });
-
       const params = {
-        branchId: selectedBranch
+        branchId: selectedBranch,
+        timeRange: timeRange || selectedTimeRange
       };
 
       // Only add date parameters if they exist
@@ -103,7 +106,13 @@ const AdminDashboard = () => {
         todayLeads: 0,
         newCustomers: 0,
         todayFollowups: 0,
-        hotLeads: 0
+        hotLeads: 0,
+        activeLeads: 0,
+        hotActiveLeads: 0,
+        salesLeads: 0,
+        totalPeriodLeads: 0,
+        periodStart: '',
+        periodEnd: ''
       });
     } finally {
       setLoading(false);
@@ -131,6 +140,11 @@ const AdminDashboard = () => {
       startDate,
       endDate
     });
+  };
+
+  const handleTimeRangeChange = (value) => {
+    setSelectedTimeRange(value);
+    fetchDashboardStats({ timeRange: value });
   };
 
   const cardData = [
@@ -172,6 +186,60 @@ const AdminDashboard = () => {
     smooth: true,
   };
 
+  // Chart Configuration
+  const leadsVsDealsConfig = {
+    data: dashboardStats.leadsVsClosedStats?.chartData || [],
+    xField: 'month',
+    yField: 'value',
+    seriesField: 'type',
+    isGroup: true,
+    columnStyle: {
+      radius: [4, 4, 0, 0],
+    },
+    color: ['#28c76f', '#ff5d5f'],
+    label: {
+      position: 'middle',
+      style: {
+        fill: '#FFFFFF',
+        opacity: 0.6,
+      },
+    },
+    xAxis: {
+      label: {
+        style: {
+          fill: '#909399',
+          fontSize: 12,
+        },
+      },
+    },
+    yAxis: {
+      label: {
+        style: {
+          fill: '#909399',
+          fontSize: 12,
+        },
+      },
+    },
+    legend: {
+      position: 'top-right',
+      itemName: {
+        style: {
+          fill: '#5B5C61',
+        },
+      },
+    },
+    tooltip: {
+      shared: true,
+      showMarkers: false,
+    },
+    interactions: [
+      {
+        type: 'active-region',
+        enable: true,
+      },
+    ],
+  };
+
   const timeOptions = [
     { value: '7days', label: 'Last 7 Days' },
     { value: 'currentMonth', label: 'Current Month' },
@@ -203,57 +271,48 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[24, 24]}>
         {cardData.map((card, index) => (
-          <Col xs={24} sm={12} md={8} lg={8} xl={4} key={index}>
-            <DashboardCard {...card} />
+          <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
+            <Card className="stat-card">
+              <div className="stat-icon">{card.icon}</div>
+              <div className="stat-content">
+                <h1 className="stat-count">{card.count}</h1>
+                <p className="stat-title">{card.title}</p>
+              </div>
+            </Card>
           </Col>
         ))}
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+      <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
         <Col xs={24} lg={12}>
-          <Card 
-            title="Sales Achievements" 
-            extra={
-              <div className="target-header">
-                <span>for the</span>
-                <Select
-                  defaultValue="7days"
-                  style={{ width: 160 }}
-                  options={timeOptions}
-                  bordered={false}
-                  className="time-select"
-                />
-              </div>
-            }
-          >
+          <Card className="achievement-card">
             <div className="achievement-content">
               <div className="achievement-main">
-                <h1 className="achievement-number">0</h1>
-                <p className="achievement-text">achieved out of</p>
-                <h2 className="achievement-target">0/-</h2>
+                <h1 className="achievement-number">{calculateConversionRatio(dashboardStats.salesLeads, dashboardStats.totalPeriodLeads)}%</h1>
+                <p className="achievement-text">Conversion Ratio</p>
               </div>
 
               <div className="achievement-stats">
                 <div className="stat-item">
                   <CheckCircleOutlined className="stat-icon active" />
                   <div className="stat-info">
-                    <span className="stat-value">0</span>
+                    <span className="stat-value">{dashboardStats.activeLeads}</span>
                     <span className="stat-label">Active Leads</span>
                   </div>
                 </div>
                 <div className="stat-item">
                   <FireOutlined className="stat-icon hot" />
                   <div className="stat-info">
-                    <span className="stat-value">0</span>
+                    <span className="stat-value">{dashboardStats.hotActiveLeads}</span>
                     <span className="stat-label">Hot Leads</span>
                   </div>
                 </div>
                 <div className="stat-item">
                   <DollarCircleOutlined className="stat-icon sales" />
                   <div className="stat-info">
-                    <span className="stat-value">0</span>
+                    <span className="stat-value">{dashboardStats.salesLeads}</span>
                     <span className="stat-label">Sales Leads</span>
                   </div>
                 </div>
@@ -261,33 +320,42 @@ const AdminDashboard = () => {
 
               <div className="conversion-ratio">
                 <h3>Conversion Ratio</h3>
-                <span className="ratio-value">0%</span>
+                <span className="ratio-value">
+                  {calculateConversionRatio(dashboardStats.salesLeads, dashboardStats.totalPeriodLeads)}%
+                </span>
               </div>
             </div>
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Leads vs Deal/Opportunity">
-            <Area {...chartData} />
-            <Row gutter={16} style={{ marginTop: '16px' }}>
-              <Col span={8}>
-                <p>Leads for the Month</p>
-                <h2>0</h2>
-              </Col>
-              <Col span={8}>
-                <p>Leads to Deal/Opportunity Conversion</p>
-                <h2>0</h2>
-              </Col>
-              <Col span={8}>
-                <p>Closure Percentage</p>
-                <h2>0%</h2>
-              </Col>
-            </Row>
+          <Card className="chart-card">
+            <div className="chart-summary">
+              <div className="summary-item">
+                <Typography.Text type="secondary">Total Leads Created</Typography.Text>
+                <Typography.Title level={3}>
+                  {dashboardStats.leadsVsClosedStats?.summary.totalCreated || 0}
+                </Typography.Title>
+              </div>
+              <div className="summary-item">
+                <Typography.Text type="secondary">Total Leads Closed</Typography.Text>
+                <Typography.Title level={3}>
+                  {dashboardStats.leadsVsClosedStats?.summary.totalClosed || 0}
+                </Typography.Title>
+              </div>
+            </div>
+            
+            <Column {...leadsVsDealsConfig} height={300} />
           </Card>
         </Col>
       </Row>
     </div>
   );
+};
+
+// Helper function to calculate conversion ratio
+const calculateConversionRatio = (salesLeads, totalLeads) => {
+  if (!totalLeads) return 0;
+  return Math.round((salesLeads / totalLeads) * 100);
 };
 
 export default AdminDashboard; 
