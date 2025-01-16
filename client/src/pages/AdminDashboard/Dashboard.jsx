@@ -13,17 +13,124 @@ import {
 import DashboardCard from '../../components/DashboardCard';
 import { Area } from '@ant-design/charts';
 import './styles.css';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
 const AdminDashboard = () => {
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({
+    todayLeads: 0,
+    newCustomers: 0,
+    todayFollowups: 0,
+    hotLeads: 0
+  });
+
+  // Fetch branches and initial stats on component mount
+  useEffect(() => {
+    fetchBranches();
+    fetchDashboardStats();
+  }, []);
+
+  // Fetch stats when branch or date range changes
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [selectedBranch]);
+
+  const fetchBranches = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/dashboard/branches');
+      
+      console.log('Branch API Response:', response); // Debug log
+      
+      const branchData = response.data?.data || [];
+      console.log('Branch Data:', branchData); // Debug log
+      
+      const branchOptions = [
+        { value: 'all', label: 'All Branches' },
+        ...branchData.map(branch => ({
+          value: branch.id,
+          label: branch.branch_name
+        }))
+      ];
+      
+      console.log('Branch Options:', branchOptions); // Debug log
+      
+      setBranches(branchOptions);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      setBranches([{ value: 'all', label: 'All Branches' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDashboardStats = async (dateRange = {}) => {
+    try {
+      setLoading(true);
+      const { startDate, endDate } = dateRange;
+      
+      console.log('Fetching stats with params:', {
+        branchId: selectedBranch,
+        startDate,
+        endDate
+      });
+
+      const response = await axios.get('/api/dashboard/stats', {
+        params: {
+          branchId: selectedBranch,
+          startDate,
+          endDate
+        }
+      });
+
+      if (response.data?.success) {
+        setDashboardStats(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      setDashboardStats({
+        todayLeads: 0,
+        newCustomers: 0,
+        todayFollowups: 0,
+        hotLeads: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBranchChange = (value) => {
+    setSelectedBranch(value);
+    // You can add additional logic here to refresh dashboard data based on selected branch
+  };
+
   const cardData = [
-    { icon: <ClockCircleOutlined style={{ color: '#FF9F43' }} />, count: 0, title: "Today's Leads" },
-    { icon: <UserAddOutlined style={{ color: '#28C76F' }} />, count: 0, title: "Fresh Leads" },
-    { icon: <TeamOutlined style={{ color: '#00CFE8' }} />, count: 0, title: "Assigned Leads" },
-    { icon: <PhoneOutlined style={{ color: '#EA5455' }} />, count: 0, title: "Today's Followups" },
-    { icon: <FireOutlined style={{ color: '#FF4D4F' }} />, count: 0, title: "Hot Stage Leads" },
+    { 
+      icon: <ClockCircleOutlined style={{ color: '#FF9F43' }} />, 
+      count: dashboardStats.todayLeads, 
+      title: "Today's Leads" 
+    },
+    { 
+      icon: <UserAddOutlined style={{ color: '#28C76F' }} />, 
+      count: dashboardStats.newCustomers, 
+      title: "New Customers Added" 
+    },
+    { 
+      icon: <PhoneOutlined style={{ color: '#EA5455' }} />, 
+      count: dashboardStats.todayFollowups, 
+      title: "Today's Followups" 
+    },
+    { 
+      icon: <FireOutlined style={{ color: '#FF4D4F' }} />, 
+      count: dashboardStats.hotLeads, 
+      title: "Hot Stage Leads" 
+    },
   ];
 
   // Sample data for the chart
@@ -49,13 +156,6 @@ const AdminDashboard = () => {
     { value: '90days', label: 'Last 90 Days' },
   ];
 
-  const branchOptions = [
-    { value: 'all', label: 'All Branches' },
-    { value: 'branch1', label: 'Branch 1' },
-    { value: 'branch2', label: 'Branch 2' },
-    { value: 'branch3', label: 'Branch 3' },
-  ];
-
   return (
     <div className="dashboard-container">
       <Title level={2}>Admin Dashboard</Title>
@@ -64,8 +164,12 @@ const AdminDashboard = () => {
         <div className="filter-group">
           <Select
             defaultValue="all"
+            value={selectedBranch}
+            onChange={handleBranchChange}
             style={{ width: 200 }}
-            options={branchOptions}
+            options={branches}
+            loading={loading}
+            placeholder="Select Branch"
           />
         </div>
         <div className="filter-group">
