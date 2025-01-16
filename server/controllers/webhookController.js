@@ -11,14 +11,12 @@ export const verifyWebhook = async (req, res) => {
 
     if (mode && token) {
       if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-        console.log('✅ WEBHOOK_VERIFIED');
         res.status(200).send(challenge);
       } else {
         res.sendStatus(403);
       }
     }
   } catch (error) {
-    console.error('❌ Error verifying webhook:', error);
     res.sendStatus(500);
   }
 };
@@ -27,7 +25,6 @@ export const verifyWebhook = async (req, res) => {
 export const receiveMessage = async (req, res) => {
   try {
     const { body } = req;
-    console.log('📩 Webhook received:', JSON.stringify(body, null, 2));
     
     if (body.object === 'whatsapp_business_account') {
       if (body.entry && 
@@ -39,9 +36,6 @@ export const receiveMessage = async (req, res) => {
         const messageData = body.entry[0].changes[0].value.messages[0];
         const phone = messageData.from;
         
-        console.log('📱 Processing message from:', phone);
-        console.log('💬 Message data:', messageData);
-
         // Check if lead exists
         let { data: lead, error: leadQueryError } = await supabase
           .from('leads')
@@ -53,8 +47,6 @@ export const receiveMessage = async (req, res) => {
           console.error('❌ Error querying lead:', leadQueryError);
         }
 
-        console.log('🔍 Existing lead:', lead);
-
         // Store the message with appropriate lead information
         const timestamp = messageData.timestamp 
           ? new Date(messageData.timestamp * 1000)
@@ -62,7 +54,6 @@ export const receiveMessage = async (req, res) => {
 
         if (!lead) {
           // Create new lead only if it doesn't exist
-          console.log('➕ Creating new lead for:', phone);
           const currentDate = new Date();
           
           const { data: newLead, error: createError } = await supabase
@@ -89,7 +80,6 @@ export const receiveMessage = async (req, res) => {
             throw createError;
           }
           
-          console.log('✅ New lead created:', newLead);
           lead = newLead;
         }
 
@@ -109,13 +99,21 @@ export const receiveMessage = async (req, res) => {
           throw messageError;
         }
 
-        // After storing the message, get updated unread counts
+        // After storing the message, get accurate unread count for this chat
+        const { count: unreadCount } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact' })
+          .eq('lead_id', lead.id)
+          .eq('is_read', false)
+          .eq('is_outgoing', false);
+
+        // Get total unread counts for tabs
         const { data: chats, error: countError } = await supabase
           .from('leads')
           .select(`
             id,
             assigned_user,
-            messages (
+            messages!inner (
               id,
               is_read,
               is_outgoing
@@ -131,51 +129,41 @@ export const receiveMessage = async (req, res) => {
             perChat: {}
           };
 
+          // Count unique chats for each category
+          const processedChats = new Set();
+          
           chats.forEach(chat => {
-            if (chat.messages && chat.messages.length > 0) {
+            if (!processedChats.has(chat.id)) {
               if (chat.assigned_user === null) {
                 counts.unassigned++;
               } else if (chat.assigned_user === lead.assigned_user) {
                 counts.mine++;
               }
+              processedChats.add(chat.id);
             }
           });
 
-          // Get unread count for this specific chat
-          const { count: chatCount } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact' })
-            .eq('lead_id', lead.id)
-            .eq('is_read', false)
-            .eq('is_outgoing', false);
-
-          counts.perChat[lead.id] = chatCount;
-
-          if (lead.assigned_user === null) {
-            counts.unassigned++;
-          } else {
-            counts.mine++;
-          }
+          // Set accurate unread count for this specific chat
+          counts.perChat[lead.id] = unreadCount;
 
           // Emit socket event with updated counts
           req.app.io.emit('unread_counts_update', counts);
         }
 
-        // Emit socket event with lead info and assigned status
+        // Emit socket event with lead info and unread count
         const socketData = {
           ...messageData,
           leadId: lead.id,
           name: lead.name,
-          assigned_user: lead.assigned_user
+          assigned_user: lead.assigned_user,
+          unreadCount: unreadCount // Add accurate unread count
         };
-        console.log('🔌 Emitting socket event:', socketData);
         req.app.io.emit('new_whatsapp_message', socketData);
 
         res.sendStatus(200);
       }
     }
   } catch (error) {
-    console.error('❌ Error processing webhook:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -198,7 +186,6 @@ export const getMessages = async (req, res) => {
       data: messages
     });
   } catch (error) {
-    console.error('Error fetching messages:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -273,7 +260,6 @@ export const getLastMessageTime = async (req, res) => {
       ...lastMessage
     });
   } catch (error) {
-    console.error('Error fetching last message time:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -286,8 +272,6 @@ export const getFilteredChats = async (req, res) => {
   try {
     const { filter, searchQuery } = req.query;
     const { user_id } = req.query;
-
-    console.log('Starting getFilteredChats with filter:', filter, 'search:', searchQuery);
 
     let query = supabase
       .from('leads')
@@ -338,7 +322,6 @@ export const getFilteredChats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in getFilteredChats:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -394,14 +377,11 @@ export const getUnreadChatCounts = async (req, res) => {
       }
     }));
 
-    console.log('Unread counts:', counts); // Debug log
-
     res.status(200).json({
       success: true,
       data: counts
     });
   } catch (error) {
-    console.error('Error getting unread chat counts:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -411,8 +391,6 @@ export const markMessagesAsRead = async (req, res) => {
   try {
     const { leadId } = req.params;
     const { user_id } = req.query;
-
-    console.log('Marking messages as read for lead:', leadId);
 
     // Update all unread messages for this lead to read
     const { error: updateError } = await supabase
@@ -474,7 +452,6 @@ export const markMessagesAsRead = async (req, res) => {
       data: counts
     });
   } catch (error) {
-    console.error('Error marking messages as read:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
