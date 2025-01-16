@@ -136,4 +136,48 @@
 .noteText {
   font-style: italic;
   color: #333;
+}
+
+.mediaMessage {
+  max-width: 300px;
+}
+
+.documentPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.documentIcon {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.documentPreview span {
+  flex: 1;
+  margin: 0 8px;
+  word-break: break-word;
+}
+
+.documentPreview button {
+  padding: 4px 8px;
+  height: auto;
+  font-size: 14px;
+}
+
+.documentPreview button:hover {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.audioPreview {
+  width: 100%;
+  margin: 8px 0;
+}
+
+.audioPreview audio {
+  width: 100%;
+  height: 36px;
 } 

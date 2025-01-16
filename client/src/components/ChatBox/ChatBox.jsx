@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Typography, Tooltip, Tabs, Select, Alert, Avatar } from 'antd';
+import { Input, Button, Typography, Tooltip, Tabs, Select, Alert, Avatar, Upload, Modal, message as antMessage } from 'antd';
 import {
   SendOutlined,
   SmileOutlined,
@@ -10,7 +10,10 @@ import {
   OrderedListOutlined,
   UnorderedListOutlined,
   AlignLeftOutlined,
-  UserOutlined
+  UserOutlined,
+  AudioOutlined,
+  FileOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import styles from './ChatBox.module.css';
 import theme from '../../theme';
@@ -65,6 +68,8 @@ const ChatBox = ({
   const [notes, setNotes] = useState([]);
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [fileList, setFileList] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch active users
   useEffect(() => {
@@ -100,7 +105,7 @@ const ChatBox = ({
         }
       } catch (error) {
         console.error('Failed to fetch notes:', error);
-        message.error('Failed to fetch notes');
+        antMessage.error('Failed to fetch notes');
       }
     };
 
@@ -175,9 +180,9 @@ const ChatBox = ({
         assigned_user: userId
       });
       onAssigneeChange(userId);
-      message.success('Lead assigned successfully');
+      antMessage.success('Lead assigned successfully');
     } catch (error) {
-      message.error('Failed to assign lead');
+      antMessage.error('Failed to assign lead');
     }
   };
 
@@ -221,7 +226,9 @@ const ChatBox = ({
             const formattedMessages = response.data.data.map(msg => ({
               id: msg.id,
               message: msg.message,
-              timestamp: new Date(msg.timestamp).getTime() / 1000, // Convert all dates to Unix timestamp
+              media_url: msg.media_url,
+              type: msg.type,
+              timestamp: new Date(msg.timestamp).getTime() / 1000,
               is_outgoing: msg.is_outgoing,
               phone: msg.phone
             }));
@@ -236,11 +243,52 @@ const ChatBox = ({
     fetchMessages();
   }, [id]);
 
+  // Add file upload handler
+  const handleUpload = async (file, type) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('recipient', phone);
+      formData.append('mediaType', type);
+      formData.append('mimeType', file.type);
+      formData.append('leadId', id);
+      
+      const uploadResponse = await axios.post(`${BACKEND_URL}/api/webhook/send-media`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (uploadResponse.data.success) {
+        antMessage.success('File sent successfully');
+        const serverTimestamp = Math.floor(Date.now() / 1000);
+        setMessages(prev => [...prev, {
+          id: uploadResponse.data.messageId || Date.now(),
+          message: type === 'document' ? `[Document: ${file.name}]` : '[Audio Message]',
+          media_url: uploadResponse.data.data.url,
+          timestamp: serverTimestamp,
+          is_outgoing: true,
+          phone: phone,
+          type: type
+        }]);
+      } else {
+        antMessage.error('Failed to send file');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      antMessage.error(error.response?.data?.error || 'Failed to upload file');
+    } finally {
+      setUploading(false);
+      setFileList([]);
+    }
+  };
+
   const renderMessages = () => {
     const combinedMessages = [
       ...messages.map(msg => ({
         ...msg,
-        type: 'whatsapp',
+        type: msg.type || 'text',
         timestamp: typeof msg.timestamp === 'string' 
           ? postgresTimestampToUnix(msg.timestamp)
           : msg.timestamp
@@ -258,14 +306,13 @@ const ChatBox = ({
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {combinedMessages.map((item, index) => {
-          // Format the time display
           const messageTime = new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: 'numeric',
             hour12: true
           });
 
-          if (item.type === 'whatsapp') {
+          if (item.type === 'document') {
             return (
               <div 
                 key={item.id || index}
@@ -273,17 +320,25 @@ const ChatBox = ({
               >
                 <div className={styles.messageBubble}>
                   <div className={styles.messageText}>
-                    {item.message}
+                    <div className={styles.documentPreview}>
+                      <FileOutlined className={styles.documentIcon} />
+                      <span>{item.message}</span>
+                      {item.media_url && (
+                        <Button 
+                          type="link" 
+                          icon={<DownloadOutlined />}
+                          onClick={() => window.open(item.media_url, '_blank')}
+                        >
+                          Download
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className={styles.messageFooter}>
-                    <span className={styles.messageTime}>
-                      {messageTime}
-                    </span>
-                  </div>
+                  <div className={styles.messageTime}>{messageTime}</div>
                 </div>
               </div>
             );
-          } else {
+          } else if (item.type === 'note') {
             return (
               <div 
                 key={item.id || index}
@@ -300,6 +355,22 @@ const ChatBox = ({
                     <span className={styles.messageTime}>
                       {messageTime}
                     </span>
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <div 
+                key={item.id || index}
+                className={`${styles.messageContainer} ${item.is_outgoing ? styles.sentMessage : styles.receivedMessage}`}
+              >
+                <div className={styles.messageBubble}>
+                  <div className={styles.messageText}>
+                    {item.message}
+                  </div>
+                  <div className={styles.messageFooter}>
+                    <span className={styles.messageTime}>{messageTime}</span>
                   </div>
                 </div>
               </div>
@@ -371,11 +442,25 @@ const ChatBox = ({
                 icon={<SmileOutlined />}
                 className={styles.iconButton}
               />
-              <Button 
-                type="text" 
-                icon={<PaperClipOutlined />}
-                className={styles.iconButton}
-              />
+              <Upload
+                beforeUpload={(file) => {
+                  if (file.type.startsWith('audio/')) {
+                    handleUpload(file, 'audio');
+                  } else {
+                    handleUpload(file, 'document');
+                  }
+                  return false;
+                }}
+                fileList={fileList}
+                showUploadList={false}
+              >
+                <Button 
+                  type="text" 
+                  icon={<PaperClipOutlined />}
+                  className={styles.iconButton}
+                  loading={uploading}
+                />
+              </Upload>
               <TextArea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

@@ -169,16 +169,25 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
       }));
 
       setFilteredChats(prev => {
-        // Find existing chat
         const existingChatIndex = prev.findIndex(chat => chat.id === message.leadId);
+        
+        // Determine the message preview based on message type
+        let messagePreview = '';
+        if (message.type === 'document') {
+          messagePreview = `[Document: ${message.filename || 'File'}]`;
+        } else if (message.type === 'audio') {
+          messagePreview = '[Audio Message]';
+        } else {
+          messagePreview = message.text?.body || message.message || 'New message';
+        }
 
         if (existingChatIndex === -1) {
-          // Only create new chat if it doesn't exist
+          // Create new chat if it doesn't exist
           const newChat = {
             id: message.leadId,
             name: message.name || `WhatsApp Lead (${message.from})`,
             phone: message.from,
-            lastMessage: message.text.body,
+            lastMessage: messagePreview,
             whatsapp: true,
             assigned_user: message.assigned_user || null
           };
@@ -189,7 +198,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
             if (index === existingChatIndex) {
               return {
                 ...chat,
-                lastMessage: message.text.body
+                lastMessage: messagePreview
               };
             }
             return chat;
