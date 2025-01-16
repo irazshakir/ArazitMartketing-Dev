@@ -1,6 +1,22 @@
 // server/controllers/webhookController.js
-import { sendMessage, deleteMessage as deleteWhatsAppMessage } from '../services/WhatsappService.js';
+import { sendMessage, deleteMessage, getMediaUrl } from '../services/WhatsappService.js';
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import FormData from 'form-data';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Create temp directory if it doesn't exist
+const tempDir = path.join(__dirname, '../temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
 
 // Handle webhook verification from Meta
 export const verifyWebhook = async (req, res) => {
@@ -25,6 +41,7 @@ export const verifyWebhook = async (req, res) => {
 export const receiveMessage = async (req, res) => {
   try {
     const { body } = req;
+    logger.info(`📥 Received webhook payload`, { object: body.object });
     
     if (body.object === 'whatsapp_business_account') {
       if (body.entry && 
@@ -34,6 +51,10 @@ export const receiveMessage = async (req, res) => {
           body.entry[0].changes[0].value.messages[0]
       ) {
         const messageData = body.entry[0].changes[0].value.messages[0];
+        logger.info(`📥 Processing message`, { 
+          type: messageData.type,
+          from: messageData.from 
+        });
         const phone = messageData.from;
         
         // Check if lead exists
@@ -83,13 +104,84 @@ export const receiveMessage = async (req, res) => {
           lead = newLead;
         }
 
+        // Handle different message types and get content
+        let messageContent = null;
+        let mediaUrl = null;
+
+        switch (messageData.type) {
+          case 'text':
+            messageContent = messageData.text?.body;
+            logger.info(`📝 Received text message`, { content: messageContent });
+            break;
+          case 'audio':
+            logger.info(`🎵 Received audio message`, { mediaId: messageData.audio.id });
+            mediaUrl = await getMediaUrl(messageData.audio.id);
+            messageContent = '[Audio Message]';
+            break;
+          case 'document':
+            try {
+              logger.info(`📎 Received document`, { 
+                mediaId: messageData.document.id,
+                filename: messageData.document.filename 
+              });
+              
+              mediaUrl = await getMediaUrl(messageData.document.id);
+              messageContent = `[Document: ${messageData.document.filename || 'Unnamed'}]`;
+              
+              const { error: messageError } = await supabase
+                .from('messages')
+                .insert([{
+                  lead_id: lead.id,
+                  phone: phone,
+                  message: messageContent,
+                  media_url: mediaUrl,
+                  type: 'document',
+                  timestamp: timestamp.toISOString(),
+                  is_outgoing: false
+                }]);
+
+              if (messageError) {
+                logger.error(`❌ Error storing document message:`, messageError);
+                throw messageError;
+              }
+
+              // Send socket event with document info
+              const socketData = {
+                ...messageData,
+                leadId: lead.id,
+                name: lead.name,
+                assigned_user: lead.assigned_user,
+                media_url: mediaUrl,
+                type: 'document'
+              };
+              req.app.io.emit('new_whatsapp_message', socketData);
+              return res.sendStatus(200);
+
+            } catch (error) {
+              logger.error(`❌ Error processing document:`, error);
+              throw error;
+            }
+            break;
+          default:
+            messageContent = `[${messageData.type} Message]`;
+            logger.info(`📥 Received other message type`, { type: messageData.type });
+        }
+
+        // Log message storage
+        logger.info(`�� Storing message in database`, {
+          leadId: lead.id,
+          type: messageData.type,
+          hasMedia: !!mediaUrl
+        });
+
         // Store the message
         const { error: messageError } = await supabase
           .from('messages')
           .insert([{
             lead_id: lead.id,
             phone: phone,
-            message: messageData.text?.body,
+            message: messageContent,
+            media_url: mediaUrl,
             timestamp: timestamp.toISOString(),
             is_outgoing: false
           }]);
@@ -159,11 +251,11 @@ export const receiveMessage = async (req, res) => {
           unreadCount: unreadCount // Add accurate unread count
         };
         req.app.io.emit('new_whatsapp_message', socketData);
-
-        res.sendStatus(200);
       }
     }
+    res.sendStatus(200);
   } catch (error) {
+    logger.error(`❌ Error processing webhook: ${error.message}`, { error });
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -455,3 +547,178 @@ export const markMessagesAsRead = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// Add this new controller function for handling media uploads
+export const sendMedia = async (req, res) => {
+  let tempFilePath = null;
+  
+  try {
+    if (!req.files || !req.files.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    const file = req.files.file;
+    const { recipient, mediaType, leadId } = req.body;
+
+    logger.info(`📤 Attempting to send ${mediaType} to ${recipient}`, { 
+      filename: file.name,
+      mimeType: file.mimetype 
+    });
+
+    // Create a safe temp file path using path.join
+    tempFilePath = path.join(tempDir, `${Date.now()}-${file.name}`);
+    
+    // Move file to temporary location
+    await file.mv(tempFilePath);
+
+    try {
+      // Create form data
+      const form = new FormData();
+      form.append('file', fs.createReadStream(tempFilePath));
+      form.append('messaging_product', 'whatsapp');
+      form.append('type', file.mimetype);
+
+      // Upload to WhatsApp
+      const uploadResponse = await axios.post(
+        `${process.env.WHATSAPP_API_URL}/${process.env.WHATSAPP_NUMBER_ID}/media`,
+        form,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+            ...form.getHeaders()
+          }
+        }
+      );
+
+      const mediaId = uploadResponse.data.id;
+
+      // Send media message
+      const messageResponse = await axios.post(
+        `${process.env.WHATSAPP_API_URL}/${process.env.WHATSAPP_NUMBER_ID}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipient,
+          type: mediaType,
+          [mediaType]: {
+            id: mediaId
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Store the message in database
+      const { data: messageData, error: messageError } = await supabase
+        .from('messages')
+        .insert([{
+          lead_id: leadId,
+          phone: recipient,
+          message: `[${mediaType === 'document' ? 'Document' : 'Audio'}: ${file.name}]`,
+          media_url: uploadResponse.data.url,
+          timestamp: new Date(),
+          is_outgoing: true,
+          type: mediaType
+        }])
+        .select()
+        .single();
+
+      if (messageError) {
+        logger.error('❌ Error storing outgoing media message:', messageError);
+        throw messageError;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: messageResponse.data,
+        messageId: messageData?.id
+      });
+
+    } catch (error) {
+      logger.error(`❌ Error in media handling: ${error.message}`, { error });
+      throw error;
+    }
+
+  } catch (error) {
+    logger.error(`❌ Error sending media message: ${error.message}`, { error });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  } finally {
+    // Clean up temp file
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
+  }
+};
+
+// Helper function to upload media to WhatsApp
+const uploadMedia = async (filePath, mimeType) => {
+  try {
+    logger.info(`📤 Uploading media file`, { mimeType });
+    
+    const form = new FormData();
+    form.append('file', fs.createReadStream(filePath));
+    form.append('messaging_product', 'whatsapp');
+    form.append('type', mimeType);
+
+    const response = await axios.post(
+      `${process.env.WHATSAPP_API_URL}/${process.env.WHATSAPP_NUMBER_ID}/media`,
+      form,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          ...form.getHeaders()
+        }
+      }
+    );
+
+    return response.data.id;
+  } catch (error) {
+    logger.error(`❌ Error uploading media: ${error.message}`, { error });
+    throw error;
+  }
+};
+
+// Helper function to send media message
+const sendMediaMessage = async (recipient, mediaId, mediaType) => {
+  try {
+    const messageData = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipient,
+      type: mediaType,
+      [mediaType]: {
+        id: mediaId
+      }
+    };
+
+    const response = await axios.post(
+      `${process.env.WHATSAPP_API_URL}/${process.env.WHATSAPP_NUMBER_ID}/messages`,
+      messageData,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error(`❌ Error sending media message: ${error.message}`, { error });
+    throw error;
+  }
+};
+
+
+
+

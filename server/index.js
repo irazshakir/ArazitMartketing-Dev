@@ -5,6 +5,9 @@ import { dirname } from 'path';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
+import fileUpload from 'express-fileupload';
+import path from 'path';
+import fs from 'fs';
 
 
 // Import routes
@@ -25,11 +28,21 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Create temp directory if it doesn't exist
+const tempDir = path.join(__dirname, 'temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: tempDir
+}));
 
 // Routes
 app.use('/api', authRoutes);

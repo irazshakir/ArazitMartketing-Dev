@@ -7,35 +7,29 @@ import {
   getLastMessageTime,
   getFilteredChats,
   getUnreadChatCounts,
-  markMessagesAsRead
+  markMessagesAsRead,
+  sendMedia
 } from '../controllers/webhookController.js';
+import { uploadMedia } from '../services/WhatsappService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
-// Webhook verification route
+// Webhook verification and message handling
 router.get('/webhook/messages', verifyWebhook);
-
-// Webhook route for receiving messages
 router.post('/webhook/messages', receiveMessage);
 
-// Route for replying to messages
+// Message management routes
 router.post('/webhook/reply', replyMessage);
-
-// New route to fetch messages
 router.get('/webhook/messages/:leadId', getMessages);
-
-// Add this new route
 router.get('/messages/last-message-time/:chatId', getLastMessageTime);
+router.post('/webhook/messages/:leadId/read', markMessagesAsRead);
 
-// Add new route for filtered chats
-router.get('/webhook/filtered-chats', (req, res, next) => {
-  getFilteredChats(req, res);
-});
-
-// Add new route for unread chat counts
+// Chat management routes
+router.get('/webhook/filtered-chats', getFilteredChats);
 router.get('/webhook/unread-counts', getUnreadChatCounts);
 
-// Add new route for marking messages as read
-router.post('/webhook/messages/:leadId/read', markMessagesAsRead);
+// Media handling routes
+router.post('/webhook/send-media', sendMedia);
 
 export default router;

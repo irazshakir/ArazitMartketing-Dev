@@ -1,0 +1,137 @@
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T12:59:23.260Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T12:59:23.513Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T12:59:24.337Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T12:59:25.153Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:01:04.034Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:01:39.268Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:01:39.444Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:02:27.882Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:02:28.680Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:02:29.550Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:02:36.223Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:03:37.073Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:03:43.586Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:04:04.855Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:04:04.859Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:04:19.746Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:04:19.748Z","type":"document"}
+{"filename":"001 (6).pdf","level":"info","mediaId":"1231401741840339","message":"📎 Received document","timestamp":"2025-01-16T13:04:20.425Z"}
+{"level":"info","mediaId":"1231401741840339","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:04:20.426Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:04:20.687Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:04:20.999Z"}
+{"hasMedia":true,"leadId":9,"level":"info","message":"💾 Storing message in database","timestamp":"2025-01-16T13:04:21.001Z","type":"document"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:04:21.694Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:05:01.873Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:05:27.168Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:06:10.853Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:06:18.220Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:08:40.251Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:09:54.569Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:10:03.723Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:10:03.724Z","type":"audio"}
+{"level":"info","mediaId":"1084589223408556","message":"🎵 Received audio message","timestamp":"2025-01-16T13:10:04.446Z"}
+{"level":"info","mediaId":"1084589223408556","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:10:04.447Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:10:04.934Z"}
+{"hasMedia":true,"leadId":9,"level":"info","message":"💾 Storing message in database","timestamp":"2025-01-16T13:10:04.935Z","type":"audio"}
+{"level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T13:10:34.312Z"}
+{"level":"info","message":"📤 Uploading media file","mimeType":"application/pdf","timestamp":"2025-01-16T13:10:34.313Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error uploading media: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:10:34.314Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error sending media message: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:10:34.315Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:13:43.772Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:13:43.773Z","type":"document"}
+{"filename":"001 (6).pdf","level":"info","mediaId":"1143375577418469","message":"📎 Received document","timestamp":"2025-01-16T13:13:44.368Z"}
+{"level":"info","mediaId":"1143375577418469","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:13:44.369Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:13:44.870Z"}
+{"hasMedia":true,"leadId":9,"level":"info","message":"💾 Storing message in database","timestamp":"2025-01-16T13:13:44.871Z","type":"document"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:14:46.604Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:14:47.349Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:14:48.072Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:14:48.788Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:17:58.345Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:18:45.366Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:21:25.924Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:22:15.474Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:23:37.656Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:23:37.658Z","type":"document"}
+{"filename":"00000001.pdf","level":"info","mediaId":"577013895238616","message":"📎 Received document","timestamp":"2025-01-16T13:23:38.383Z"}
+{"level":"info","mediaId":"577013895238616","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:23:38.386Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:23:39.965Z"}
+{"hasMedia":true,"leadId":9,"level":"info","message":"💾 Storing message in database","timestamp":"2025-01-16T13:23:40.248Z","type":"document"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:26:37.263Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:26:37.265Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:26:37.927Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:26:37.928Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:26:38.413Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:38.691Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:38.694Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:38.696Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:26:39.616Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:26:39.617Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:26:39.911Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:26:39.915Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:26:40.265Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:40.564Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:40.567Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:40.570Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:26:41.471Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:26:41.473Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:26:41.758Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:26:41.759Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:26:42.100Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:42.384Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:42.386Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:42.388Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:26:44.634Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:26:44.635Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:26:44.911Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:26:44.912Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:26:45.280Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:45.565Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:45.567Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:26:45.570Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:27:09.416Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:27:09.417Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:27:10.025Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:27:10.027Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:27:10.447Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:27:10.718Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:27:10.720Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:27:10.722Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:27:55.559Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:33:05.443Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:33:05.443Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-16T13:33:07.078Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:33:07.081Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:33:07.506Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error storing document message: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:33:07.756Z"}
+{"code":"PGRST204","details":null,"hint":null,"level":"error","message":"❌ Error processing document: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:33:07.759Z"}
+{"error":{"code":"PGRST204","details":null,"hint":null,"message":"Could not find the 'type' column of 'messages' in the schema cache"},"level":"error","message":"❌ Error processing webhook: Could not find the 'type' column of 'messages' in the schema cache","timestamp":"2025-01-16T13:33:07.762Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:50:00.506Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-16T13:50:00.508Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"1124892042180926","message":"📎 Received document","timestamp":"2025-01-16T13:50:01.277Z"}
+{"level":"info","mediaId":"1124892042180926","message":"🔍 Fetching media URL","timestamp":"2025-01-16T13:50:01.277Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-16T13:50:01.812Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T13:50:36.261Z"}
+{"level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T13:50:46.576Z"}
+{"level":"info","message":"📤 Uploading media file","mimeType":"application/pdf","timestamp":"2025-01-16T13:50:46.577Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error uploading media: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:50:46.580Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error sending media message: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:50:46.581Z"}
+{"level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T13:53:44.131Z"}
+{"level":"info","message":"📤 Uploading media file","mimeType":"application/pdf","timestamp":"2025-01-16T13:53:44.132Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error uploading media: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:53:44.133Z"}
+{"error":{"code":"ERR_INVALID_ARG_TYPE"},"level":"error","message":"❌ Error sending media message: The \"path\" argument must be of type string or an instance of Buffer or URL. Received undefined","timestamp":"2025-01-16T13:53:44.133Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:01:18.747Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:01:19.546Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:08:02.943Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:10:39.812Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:10:40.548Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:11:44.439Z"}
+{"level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T14:16:14.410Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:16:25.136Z"}
+{"level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T14:16:52.166Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:19:20.680Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-16T14:19:21.535Z"}
+{"filename":"Invoice INV-0133-25.pdf","level":"info","message":"📤 Attempting to send document to 923254122821","mimeType":"application/pdf","timestamp":"2025-01-16T14:19:50.900Z"}
+{"level":"info","message":"📤 Uploading media file","mimeType":"application/pdf","timestamp":"2025-01-16T14:19:50.903Z"}
+{"error":{},"level":"error","message":"❌ Error uploading media: form.getHeaders is not a function","timestamp":"2025-01-16T14:19:50.904Z"}
+{"error":{},"level":"error","message":"❌ Error sending media message: form.getHeaders is not a function","timestamp":"2025-01-16T14:19:50.904Z"}
