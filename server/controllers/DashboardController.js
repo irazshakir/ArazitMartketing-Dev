@@ -5,7 +5,7 @@ const DashboardController = {
     try {
       const { branchId, startDate, endDate } = req.query;
       
-      console.log('Request params:', req.query); // Debug log
+      console.log('Received query params:', req.query); // Debug log
       
       // Get current date in YYYY-MM-DD format
       const currentDate = new Date().toISOString().split('T')[0];
@@ -15,12 +15,22 @@ const DashboardController = {
       firstDayOfMonth.setDate(1);
       const currentMonthStart = firstDayOfMonth.toISOString().split('T')[0];
 
+      // Validate date parameters
+      const hasValidDateRange = startDate && endDate && 
+        !isNaN(Date.parse(startDate)) && !isNaN(Date.parse(endDate));
+
+      console.log('Date validation:', { 
+        hasValidDateRange, 
+        startDate, 
+        endDate 
+      }); // Debug log
+
       const stats = await DashboardModel.getDashboardStats({
         currentDate,
         currentMonthStart,
         branchId: branchId || 'all',
-        startDate,
-        endDate
+        startDate: hasValidDateRange ? startDate : undefined,
+        endDate: hasValidDateRange ? endDate : undefined
       });
 
       res.json({
@@ -28,12 +38,11 @@ const DashboardController = {
         data: stats
       });
     } catch (error) {
-      console.error('Controller error:', error); // Debug log
+      console.error('Controller error:', error);
       res.status(500).json({
         success: false,
         message: 'Error fetching dashboard statistics',
-        error: error.message,
-        details: error.stack // Include stack trace for debugging
+        error: error.message
       });
     }
   },
