@@ -10,11 +10,24 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
-import { Line } from '@ant-design/plots';
+import { Line, Column } from '@ant-design/plots';
 import TableSkeleton from '../../components/TableSkeleton';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
+
+const API_BASE_URL = '/api/reports'; // or process.env.REACT_APP_API_URL + '/reports'
+
+// Add this array of colors for product lines
+const productColors = [
+  '#7367F0', // Purple
+  '#28C76F', // Green
+  '#FF9F43', // Orange
+  '#EA5455', // Red
+  '#00CFE8', // Blue
+  '#FF6B6B', // Pink
+  '#4B4B4B'  // Gray
+];
 
 const Reports = () => {
   const [branches, setBranches] = useState([]);
@@ -33,12 +46,18 @@ const Reports = () => {
   const [loadingTable, setLoadingTable] = useState(false);
   const [trendData, setTrendData] = useState([]);
   const [loadingChart, setLoadingChart] = useState(false);
+  const [productStats, setProductStats] = useState([]);
+  const [loadingProductTable, setLoadingProductTable] = useState(false);
+  const [productTrendData, setProductTrendData] = useState([]);
+  const [loadingProductChart, setLoadingProductChart] = useState(false);
 
   useEffect(() => {
     fetchBranches();
     fetchReportStats();
     fetchUserStats();
     fetchTrendData();
+    fetchProductStats();
+    fetchProductTrendData();
   }, []);
 
   useEffect(() => {
@@ -72,26 +91,23 @@ const Reports = () => {
   const fetchReportStats = async (options = {}) => {
     try {
       setLoading(true);
-      const { startDate, endDate } = options;
-      
-      const params = {
-        branchId: selectedBranch
-      };
-
-      if (startDate && endDate) {
-        params.startDate = startDate;
-        params.endDate = endDate;
-      }
-
-      const response = await axios.get('/api/reports/stats', { params });
-
-      if (response.data?.success) {
-        setReportStats(response.data.data);
-      }
+      const response = await axios.get(`${API_BASE_URL}/stats`, {
+        params: {
+          branchId: selectedBranch,
+          ...options
+        }
+      });
+      setReportStats(response.data?.data || {});
     } catch (error) {
       console.error('Error fetching report stats:', error);
       setReportStats({
-        newLeads: 0
+        newLeads: 0,
+        activeLeads: 0,
+        closedLeads: 0,
+        salesLeads: 0,
+        nonPotentialLeads: 0,
+        hotLeads: 0,
+        followupRequired: 0
       });
     } finally {
       setLoading(false);
@@ -101,7 +117,7 @@ const Reports = () => {
   const fetchUserStats = async (dateRange) => {
     try {
       setLoadingTable(true);
-      const response = await axios.get('/api/reports/user-stats', {
+      const response = await axios.get(`${API_BASE_URL}/user-stats`, {
         params: {
           branchId: selectedBranch,
           startDate: dateRange?.startDate,
@@ -112,6 +128,7 @@ const Reports = () => {
     } catch (error) {
       console.error('Error fetching user stats:', error);
       message.error('Failed to fetch user statistics');
+      setUserStats([]);
     } finally {
       setLoadingTable(false);
     }
@@ -120,7 +137,7 @@ const Reports = () => {
   const fetchTrendData = async (dateRange) => {
     try {
       setLoadingChart(true);
-      const response = await axios.get('/api/reports/trends', {
+      const response = await axios.get(`${API_BASE_URL}/trends`, {
         params: {
           branchId: selectedBranch,
           startDate: dateRange?.startDate,
@@ -131,8 +148,49 @@ const Reports = () => {
     } catch (error) {
       console.error('Error fetching trend data:', error);
       message.error('Failed to fetch trend data');
+      setTrendData([]);
     } finally {
       setLoadingChart(false);
+    }
+  };
+
+  const fetchProductStats = async (dateRange) => {
+    try {
+      setLoadingProductTable(true);
+      const response = await axios.get(`${API_BASE_URL}/product-stats`, {
+        params: {
+          branchId: selectedBranch,
+          startDate: dateRange?.startDate,
+          endDate: dateRange?.endDate
+        }
+      });
+      setProductStats(response.data);
+    } catch (error) {
+      console.error('Error fetching product stats:', error);
+      message.error('Failed to fetch product statistics');
+      setProductStats([]);
+    } finally {
+      setLoadingProductTable(false);
+    }
+  };
+
+  const fetchProductTrendData = async (dateRange) => {
+    try {
+      setLoadingProductChart(true);
+      const response = await axios.get(`${API_BASE_URL}/product-trends`, {
+        params: {
+          branchId: selectedBranch,
+          startDate: dateRange?.startDate,
+          endDate: dateRange?.endDate
+        }
+      });
+      setProductTrendData(response.data);
+    } catch (error) {
+      console.error('Error fetching product trend data:', error);
+      message.error('Failed to fetch product trend data');
+      setProductTrendData([]);
+    } finally {
+      setLoadingProductChart(false);
     }
   };
 
@@ -141,6 +199,8 @@ const Reports = () => {
       fetchReportStats();
       fetchUserStats();
       fetchTrendData();
+      fetchProductStats();
+      fetchProductTrendData();
       return;
     }
 
@@ -153,6 +213,8 @@ const Reports = () => {
     fetchReportStats(dateRange);
     fetchUserStats(dateRange);
     fetchTrendData(dateRange);
+    fetchProductStats(dateRange);
+    fetchProductTrendData(dateRange);
   };
 
   const cardData = [
@@ -198,6 +260,8 @@ const Reports = () => {
     fetchReportStats({ branchId: value });
     fetchUserStats({ branchId: value });
     fetchTrendData({ branchId: value });
+    fetchProductStats({ branchId: value });
+    fetchProductTrendData({ branchId: value });
   };
 
   // Chart configuration
@@ -268,6 +332,66 @@ const Reports = () => {
     return <span>{ratio}</span>;
   };
 
+  // Product trend chart configuration
+  const productTrendConfig = {
+    data: productTrendData,
+    isGroup: true,
+    xField: 'month',
+    yField: 'count',
+    seriesField: 'productName',
+    color: productColors,
+    label: {
+      position: 'middle',
+      layout: [
+        {
+          type: 'interval-adjust-position',
+        },
+        {
+          type: 'interval-hide-overlap',
+        },
+        {
+          type: 'adjust-color',
+        },
+      ],
+    },
+    columnStyle: {
+      radius: [4, 4, 0, 0],
+    },
+    xAxis: {
+      label: {
+        style: {
+          fontSize: 12,
+          fontWeight: 500
+        }
+      }
+    },
+    yAxis: {
+      min: 0,
+      grid: {
+        line: {
+          style: {
+            stroke: '#E5E7EB',
+            lineWidth: 1,
+            lineDash: [4, 5],
+            strokeOpacity: 0.7,
+          },
+        },
+      },
+    },
+    legend: {
+      position: 'top',
+      itemName: {
+        style: {
+          fontSize: 12,
+        },
+      },
+    },
+    tooltip: {
+      shared: true,
+      showMarkers: false
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <Title level={2}>Reports</Title>
@@ -311,7 +435,6 @@ const Reports = () => {
         <Col span={24}>
           <Card title="Leads Analysis by Users" className="report-card">
             <Row gutter={[24, 0]}>
-              {/* Table Section */}
               <Col xs={24} xl={14}>
                 <div className="table-section">
                   <div className="table-header">
@@ -378,8 +501,6 @@ const Reports = () => {
                   )}
                 </div>
               </Col>
-
-              {/* Trend Chart Section */}
               <Col xs={24} xl={10}>
                 <div className="trend-section">
                   {loadingChart ? (
@@ -397,132 +518,81 @@ const Reports = () => {
         </Col>
       </Row>
 
-      {/* Product Wise Chart Table */}
+      {/* Product Analysis Section */}
       <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
         <Col span={24}>
-          <Card title="Product Wise Chart" className="report-card">
-            <Table
-              dataSource={[
-                {
-                  key: '1',
-                  userName: 'Product A',
-                  new: 35,
-                  active: 20,
-                  closed: 12,
-                  sale: 8,
-                  conversionRatio: '23%',
-                },
-                {
-                  key: '2',
-                  userName: 'Product B',
-                  new: 42,
-                  active: 28,
-                  closed: 15,
-                  sale: 10,
-                  conversionRatio: '24%',
-                },
-                // Add more sample data as needed
-              ]}
-              columns={[
-                {
-                  title: 'Product Name',
-                  dataIndex: 'userName',
-                  key: 'userName',
-                },
-                {
-                  title: 'New',
-                  dataIndex: 'new',
-                  key: 'new',
-                  sorter: (a, b) => a.new - b.new,
-                },
-                {
-                  title: 'Active',
-                  dataIndex: 'active',
-                  key: 'active',
-                  sorter: (a, b) => a.active - b.active,
-                },
-                {
-                  title: 'Closed',
-                  dataIndex: 'closed',
-                  key: 'closed',
-                  sorter: (a, b) => a.closed - b.closed,
-                },
-                {
-                  title: 'Sale',
-                  dataIndex: 'sale',
-                  key: 'sale',
-                  sorter: (a, b) => a.sale - b.sale,
-                },
-                {
-                  title: 'Conversion Ratio',
-                  dataIndex: 'conversionRatio',
-                  key: 'conversionRatio',
-                  sorter: (a, b) => a.conversionRatio.localeCompare(b.conversionRatio),
-                },
-              ]}
-              bordered
-              size="middle"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-              }}
-            />
+          <Card title="Product Wise Analysis" className="report-card">
+            <Row gutter={[24, 0]}>
+              <Col xs={24} xl={14}>
+                {loadingProductTable ? (
+                  <TableSkeleton />
+                ) : (
+                  <Table
+                    dataSource={productStats}
+                    columns={[
+                      {
+                        title: 'Product Name',
+                        dataIndex: 'productName',
+                        key: 'productName',
+                      },
+                      {
+                        title: 'New',
+                        dataIndex: 'new',
+                        key: 'new',
+                        sorter: (a, b) => a.new - b.new,
+                      },
+                      {
+                        title: 'Active',
+                        dataIndex: 'active',
+                        key: 'active',
+                        sorter: (a, b) => a.active - b.active,
+                      },
+                      {
+                        title: 'Closed',
+                        dataIndex: 'closed',
+                        key: 'closed',
+                        sorter: (a, b) => a.closed - b.closed,
+                      },
+                      {
+                        title: 'Sales',
+                        dataIndex: 'sales',
+                        key: 'sales',
+                        sorter: (a, b) => a.sales - b.sales,
+                      },
+                      {
+                        title: 'Conversion Ratio',
+                        dataIndex: 'conversionRatio',
+                        key: 'conversionRatio',
+                        sorter: (a, b) => parseFloat(a.conversionRatio) - parseFloat(b.conversionRatio),
+                        render: (ratio) => getConversionRatioTag(ratio)
+                      }
+                    ]}
+                    bordered
+                    size="middle"
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+                    }}
+                  />
+                )}
+              </Col>
+              <Col xs={24} xl={10}>
+                <div className="trend-section">
+                  {loadingProductChart ? (
+                    <TableSkeleton />
+                  ) : (
+                    <>
+                      <Title level={5}>Product-wise Lead Trend</Title>
+                      <Column {...productTrendConfig} height={300} />
+                    </>
+                  )}
+                </div>
+              </Col>
+            </Row>
           </Card>
         </Col>
       </Row>
-
-      {/* Stage Wise Table */}
-      <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
-        <Col span={24}>
-          <Card title="Stage Wise" className="report-card">
-            <Table
-              dataSource={[
-                {
-                  key: '1',
-                  stageName: 'Initial Contact',
-                  active: 45,
-                  closed: 30,
-                },
-                {
-                  key: '2',
-                  stageName: 'Meeting Scheduled',
-                  active: 38,
-                  closed: 25,
-                },
-                // Add more sample data as needed
-              ]}
-              columns={[
-                {
-                  title: 'Stage Name',
-                  dataIndex: 'stageName',
-                  key: 'stageName',
-                },
-                {
-                  title: 'Active',
-                  dataIndex: 'active',
-                  key: 'active',
-                  sorter: (a, b) => a.active - b.active,
-                },
-                {
-                  title: 'Closed',
-                  dataIndex: 'closed',
-                  key: 'closed',
-                  sorter: (a, b) => a.closed - b.closed,
-                },
-              ]}
-              bordered
-              size="middle"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-              }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
     </div>
   );
 };
