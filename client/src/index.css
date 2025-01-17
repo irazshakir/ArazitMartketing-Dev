@@ -79,7 +79,57 @@ h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-d
   border-color: rgba(170, 36, 120, 0.2) !important;
 }
 
-/* .anticon svg {
-  display: inline-block;
-  color: var(--color-primary) !important;
-} */
+.report-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.report-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.table-section {
+  padding-right: 24px;
+  border-right: 1px solid #f0f0f0;
+}
+
+.table-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
+.trend-section {
+  padding-left: 24px;
+}
+
+.trend-section h5 {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .table-section {
+    padding-right: 0;
+    border-right: none;
+    margin-bottom: 24px;
+  }
+  
+  .trend-section {
+    padding-left: 0;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 24px;
+  }
+}
+
+.theme-button {
+  background-color: #aa2478 !important;
+  border-color: #aa2478 !important;
+}
+
+.theme-button:hover {
+  background-color: #aa2478 !important;
+  border-color: #aa2478 !important;
+}

@@ -26,3 +26,13 @@
 .settings-table .ant-table-pagination-right {
   justify-content: flex-end;
 } 
+
+.theme-button {
+  background-color: #aa2478 !important;
+  border-color: #aa2478 !important;
+}
+
+.theme-button:hover {
+  background-color: #aa2478 !important;
+  border-color: #aa2478 !important;
+}
