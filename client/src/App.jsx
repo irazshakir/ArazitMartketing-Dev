@@ -26,6 +26,7 @@ import LeadEdit from './pages/Leads/Edit';
 import Invoices from './pages/Invoices/Index';
 import Accounts from './pages/Accounts/Index';
 import CompanyBranches from './pages/Settings/CompanyBranches';
+import Reports from './pages/Reports/Reports';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -126,6 +127,8 @@ function App() {
         </Route>
         
         <Route path="accounts" element={<Accounts />} />
+        
+        <Route path="reports" element={<Reports />} />
         
         {/* ... other admin routes ... */}
       </Route>

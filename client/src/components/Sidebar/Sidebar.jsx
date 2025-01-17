@@ -73,10 +73,10 @@ const Sidebar = () => {
       label: 'Analytics',
       children: [
         { 
-          key: '/admin/analytics/reports', 
+          key: '/admin/reports',
           icon: <PieChartOutlined />,
           label: 'Reports',
-          path: '/admin/analytics/reports' 
+          path: '/admin/reports'
         },
         { 
           key: '/admin/analytics/logs', 
