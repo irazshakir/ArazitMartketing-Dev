@@ -22,6 +22,7 @@ import invoiceRoutes from './routes/invoices.js';
 import branchRoutes from './routes/branches.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import dashboardRoutes from './routes/dashboard.js';
+import reportsRoutes from './routes/reports.js';
 
 // Initialize dotenv
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api', invoiceRoutes);
 app.use('/api', branchRoutes);
 app.use('/api', webhookRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
