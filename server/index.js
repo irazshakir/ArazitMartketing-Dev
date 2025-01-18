@@ -24,6 +24,7 @@ import webhookRoutes from './routes/webhookRoutes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
 import userDashboardRoutes from './routes/userDashboard.js';
+import userLeadsRouter from './routes/userLeads.js';
 
 // Initialize dotenv
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api', webhookRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api', userDashboardRoutes);
+app.use('/api', userLeadsRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

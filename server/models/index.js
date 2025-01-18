@@ -1,5 +1,4 @@
 import { supabase } from '../config/database.js';
-import jwt from 'jsonwebtoken';
 import CustomUmrahHotelModel from './CustomUmrahHotelModel.js';
 import CustomUmrahServiceModel from './CustomUmrahServiceModel.js';
 import CustomUmrahPriceModel from './CustomUmrahPriceModel.js';
@@ -371,7 +370,7 @@ export const BranchModel = {
   }
 };
 
-// Export imported models
+// Export all models
 export {
   CustomUmrahHotelModel,
   CustomUmrahServiceModel,
