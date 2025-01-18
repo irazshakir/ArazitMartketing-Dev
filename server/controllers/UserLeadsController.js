@@ -385,6 +385,217 @@ const UserLeadsController = {
         details: error.message
       });
     }
+  },
+
+  getCurrentUser: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      console.log('UserLeadsController - Getting current user - Initial data:', {
+        userId,
+        reqUser: req.user,
+        headers: req.headers
+      });
+
+      // First check if we have valid user ID
+      if (!userId) {
+        console.error('UserLeadsController - No user ID provided');
+        return res.status(400).json({
+          success: false,
+          error: 'No user ID provided'
+        });
+      }
+
+      console.log('UserLeadsController - Executing Supabase query for user:', userId);
+
+      // Updated query with error catching
+      let queryResponse;
+      try {
+        queryResponse = await supabase
+          .from('users')
+          .select(`
+            id,
+            name,
+            role_id,
+            user_is_active,
+            roles:role_id (
+              id,
+              role_name
+            )
+          `)
+          .eq('id', userId)
+          .eq('user_is_active', true);
+
+        console.log('UserLeadsController - Raw Supabase response:', {
+          data: queryResponse.data,
+          error: queryResponse.error,
+          status: queryResponse.status,
+          statusText: queryResponse.statusText
+        });
+
+      } catch (dbError) {
+        console.error('UserLeadsController - Database query error:', {
+          error: dbError.message,
+          stack: dbError.stack,
+          details: dbError.details
+        });
+        throw dbError;
+      }
+
+      const { data: userData, error } = queryResponse;
+
+      if (error) {
+        console.error('UserLeadsController - Database error details:', {
+          message: error.message,
+          hint: error.hint,
+          details: error.details,
+          code: error.code
+        });
+        throw error;
+      }
+
+      if (!userData || userData.length === 0) {
+        console.log('UserLeadsController - No user found or user inactive:', {
+          userId,
+          queryResult: userData
+        });
+        return res.status(404).json({
+          success: false,
+          error: 'User not found or inactive'
+        });
+      }
+
+      const user = Array.isArray(userData) ? userData[0] : userData;
+
+      console.log('UserLeadsController - User data fetched successfully:', {
+        userId: user.id,
+        name: user.name,
+        roleId: user.role_id,
+        isActive: user.user_is_active,
+        role: user.roles?.role_name,
+        fullData: user
+      });
+
+      res.json({
+        success: true,
+        data: user
+      });
+    } catch (error) {
+      console.error('UserLeadsController - Critical error in getCurrentUser:', {
+        message: error.message,
+        stack: error.stack,
+        type: error.constructor.name,
+        details: error.details || 'No additional details'
+      });
+
+      // Check if it's a database connection error
+      if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+        return res.status(503).json({
+          success: false,
+          error: 'Database connection failed',
+          details: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get current user',
+        details: error.message
+      });
+    }
+  },
+
+  assignLead: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { assigned_user } = req.body;
+      const userId = req.user.id;
+
+      console.log('UserLeadsController - Assigning lead:', {
+        leadId: id,
+        assignedTo: assigned_user,
+        requestedBy: userId
+      });
+
+      // Verify if the lead belongs to the current user
+      const { data: leadData, error: leadError } = await supabase
+        .from('leads')
+        .select('id, assigned_user')
+        .eq('id', id)
+        .eq('assigned_user', userId)
+        .single();
+
+      if (leadError || !leadData) {
+        console.log('UserLeadsController - Unauthorized lead assignment attempt');
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized to assign this lead'
+        });
+      }
+
+      // Update the lead's assigned user
+      const { data, error } = await supabase
+        .from('leads')
+        .update({ assigned_user })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('UserLeadsController - Lead assigned successfully:', {
+        leadId: id,
+        newAssignee: assigned_user
+      });
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('UserLeadsController - Error assigning lead:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to assign lead',
+        details: error.message
+      });
+    }
+  },
+
+  getUsers: async (req, res) => {
+    try {
+      console.log('UserLeadsController - Fetching users');
+
+      const { data: users, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          name,
+          role_id,
+          user_is_active
+        `)
+        .eq('user_is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('UserLeadsController - Error fetching users:', error);
+        throw error;
+      }
+
+      console.log('UserLeadsController - Users fetched:', users.length);
+
+      res.json({
+        success: true,
+        data: users
+      });
+    } catch (error) {
+      console.error('UserLeadsController - Error in getUsers:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch users',
+        details: error.message
+      });
+    }
   }
 };
 

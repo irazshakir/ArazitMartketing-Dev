@@ -94,14 +94,25 @@ const checkAuth = async (req, res, next) => {
   }
 };
 
-// Get leads for current user
-router.get('/user-leads', checkAuth, UserLeadsController.getUserLeads);
-router.get('/user-leads/:id', checkAuth, UserLeadsController.getUserLead);
+// First, place specific routes before parameterized routes
+// User management routes
+router.get('/user-leads/current-user', checkAuth, UserLeadsController.getCurrentUser);
 
-// Add new routes for notes
+// Add this route before parameterized routes
+router.get('/user-leads/users', checkAuth, UserLeadsController.getUsers);
+
+// Then, place the parameterized routes
+router.get('/user-leads/:id', checkAuth, UserLeadsController.getUserLead);
+router.get('/user-leads', checkAuth, UserLeadsController.getUserLeads);
+
+// Notes routes
 router.get('/user-leads/:id/notes', checkAuth, UserLeadsController.getUserLeadNotes);
 router.post('/user-leads/:id/notes', checkAuth, UserLeadsController.addUserLeadNote);
 
+// Lead management routes
 router.patch('/user-leads/:id', checkAuth, UserLeadsController.updateLead);
+router.patch('/user-leads/:id/assign', checkAuth, UserLeadsController.assignLead);
+
+
 
 export default router; 
