@@ -139,22 +139,22 @@ const Sidebar = () => {
 
   const userMenuItems = [
     { 
-      key: '/dashboard',
+      key: '/user/dashboard',
       icon: <HomeOutlined />, 
       label: 'Dashboard',
-      path: '/dashboard'
+      path: '/user/dashboard'
     },
     { 
-      key: '/leads',
+      key: '/user/leads',
       icon: <UserOutlined />, 
       label: 'Leads',
-      path: '/leads'
+      path: '/user/leads'
     },
     { 
-      key: '/conversations',
+      key: '/user/conversations',
       icon: <MessageOutlined />, 
       label: 'Conversations',
-      path: '/conversations'
+      path: '/user/conversations'
     },
     { 
       key: 'analytics', 
@@ -162,10 +162,10 @@ const Sidebar = () => {
       label: 'Analytics',
       children: [
         { 
-          key: '/reports',
+          key: '/user/reports',
           icon: <PieChartOutlined />,
           label: 'Reports',
-          path: '/reports'
+          path: '/user/reports'
         }
       ]
     }

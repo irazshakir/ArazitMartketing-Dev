@@ -93,18 +93,50 @@ const ChatBox = ({
     const fetchNotes = async () => {
       try {
         if (id) {
-          const response = await axios.get(`/api/leads/${id}/notes`);
-          if (response.data) {
-            const formattedNotes = response.data.map(note => ({
+          const userStr = localStorage.getItem('user');
+          const userData = JSON.parse(userStr);
+          const userRole = userData?.roles?.role_name;
+          const token = localStorage.getItem('user_jwt');
+
+          console.log('ChatBox - Fetch Notes:', {
+            leadId: id,
+            userData,
+            userRole,
+            token: token ? 'Token exists' : 'No token'
+          });
+
+          const endpoint = userRole === 'admin' ? 
+            `/api/leads/${id}/notes` : 
+            `/api/user-leads/${id}/notes`;
+
+          const response = await axios.get(endpoint, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log('ChatBox - Notes Response:', response.data);
+
+          // Check if response has the expected structure
+          if (response.data && response.data.success && Array.isArray(response.data.data)) {
+            const formattedNotes = response.data.data.map(note => ({
               ...note,
-              // Use the helper function for timestamp conversion
               timestamp: postgresTimestampToUnix(note.created_at)
             }));
             setNotes(formattedNotes);
+          } else {
+            console.error('ChatBox - Unexpected response format:', response.data);
+            throw new Error('Invalid response format');
           }
         }
       } catch (error) {
-        console.error('Failed to fetch notes:', error);
+        console.error('ChatBox - Fetch Notes Error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          token: localStorage.getItem('user_jwt') ? 'exists' : 'missing'
+        });
         antMessage.error('Failed to fetch notes');
       }
     };
@@ -146,22 +178,64 @@ const ChatBox = ({
             console.error('Failed to send message:', response.data.error);
           }
         } else {
-          // For notes, let the server handle the timestamp
-          const noteResponse = await onAddNote(message);
-          const response = await axios.get(`/api/leads/${id}/notes`);
-          
-          // Format the fetched notes with proper timestamp conversion
-          const formattedNotes = response.data.map(note => ({
-            ...note,
-            // Always convert PostgreSQL timestamp to Unix timestamp
-            timestamp: new Date(note.created_at).getTime() / 1000
-          }));
-          
-          setNotes(formattedNotes);
-          setMessage('');
+          // For notes tab
+          const token = localStorage.getItem('user_jwt');
+          const userStr = localStorage.getItem('user');
+          const userData = JSON.parse(userStr);
+          const userRole = userData?.roles?.role_name;
+
+          console.log('ChatBox - Adding note:', {
+            leadId: id,
+            message,
+            userData
+          });
+
+          // Use appropriate endpoint based on role
+          const endpoint = userRole === 'admin' ? 
+            `/api/leads/${id}/notes` : 
+            `/api/user-leads/${id}/notes`;
+
+          // Add the note
+          const noteResponse = await axios.post(endpoint, 
+            { note: message },
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          console.log('ChatBox - Note creation response:', noteResponse.data);
+
+          if (noteResponse.data.success) {
+            // Fetch updated notes
+            const updatedNotesResponse = await axios.get(endpoint, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (updatedNotesResponse.data.success) {
+              const formattedNotes = updatedNotesResponse.data.data.map(note => ({
+                ...note,
+                timestamp: postgresTimestampToUnix(note.created_at)
+              }));
+              setNotes(formattedNotes);
+            }
+
+            setMessage('');
+            antMessage.success('Note added successfully');
+          }
         }
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('ChatBox - Error sending message/note:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        antMessage.error('Failed to add note');
       }
     }
   };

@@ -30,6 +30,7 @@ import Reports from './pages/Reports/Reports';
 import UserReports from './pages/UserDashboard/UserReports/UserReports';
 import UserLeadIndex from './pages/UserDashboard/UserLeads/UserLeadIndex';
 import UserConversationsIndex from './pages/UserDashboard/UserConversations/UserConversationsIndex';
+import UserLeadEdit from './pages/UserDashboard/UserLeads/UserLeadEdit';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -155,7 +156,7 @@ function App() {
 
       {/* User Routes */}
       <Route 
-        path="/" 
+        path="/user" 
         element={
           <RouteGuard>
             <ProtectedRoute allowedRoles={['user']} session={session} userRole={userRole}>
@@ -166,7 +167,7 @@ function App() {
       >
         <Route path="dashboard" element={<UserDashboardContent />} />
         <Route path="leads" element={<UserLeadIndex />} />
-        <Route path="leads/:id" element={<LeadEdit />} />
+        <Route path="leads/:id" element={<UserLeadEdit />} />
         <Route path="conversations" element={<UserConversationsIndex />} />
         <Route path="reports" element={<UserReports />} />
       </Route>
