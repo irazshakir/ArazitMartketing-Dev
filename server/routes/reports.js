@@ -50,4 +50,48 @@ router.get('/trends', async (req, res) => {
   }
 });
 
+router.get('/product-stats', async (req, res) => {
+  try {
+    const { branchId, startDate, endDate } = req.query;
+    const currentDate = new Date().toISOString().split('T')[0];
+    const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString().split('T')[0];
+
+    const productStats = await ReportsModel.getProductWiseStats({
+      currentMonthStart,
+      currentDate,
+      branchId,
+      startDate,
+      endDate
+    });
+
+    res.json(productStats);
+  } catch (error) {
+    console.error('Error in product stats route:', error);
+    res.status(500).json({ error: 'Failed to fetch product statistics' });
+  }
+});
+
+router.get('/product-trends', async (req, res) => {
+  try {
+    const { branchId, startDate, endDate } = req.query;
+    const currentDate = new Date().toISOString().split('T')[0];
+    const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString().split('T')[0];
+
+    const trendData = await ReportsModel.getProductTrends({
+      currentMonthStart,
+      currentDate,
+      branchId,
+      startDate,
+      endDate
+    });
+
+    res.json(trendData);
+  } catch (error) {
+    console.error('Error in product trends route:', error);
+    res.status(500).json({ error: 'Failed to fetch product trend data' });
+  }
+});
+
 export default router; 
