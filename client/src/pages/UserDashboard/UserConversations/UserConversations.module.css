@@ -1,0 +1,48 @@
+.conversationsLayout {
+  height: 100vh;
+  background: #fff;
+}
+
+.chatListSider {
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  overflow: hidden;
+}
+
+.chatBoxSection {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+  position: relative;
+}
+
+.chatInfoSider {
+  background: #fff;
+  border-left: 1px solid #f0f0f0;
+  overflow: auto;
+}
+
+.noChatSelected {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background: #fafafa;
+  color: #999;
+}
+
+.whatsappIcon {
+  color: #25D366;
+  margin-right: 8px;
+}
+
+.statusBadge {
+  margin-left: 8px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+} 
