@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
 import './styles.css';
+import TableSkeleton from '../../components/TableSkeleton';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -135,17 +136,14 @@ const UserDashboard = () => {
 
   const handleDateRangeChange = (dates) => {
     if (!dates || dates.length !== 2) {
-      fetchDashboardStats(); // Reset to default stats
+      fetchDashboardStats({ timeRange: selectedTimeRange }); // Reset to default time range
       return;
     }
 
     const [start, end] = dates;
-    const startDate = start.format('YYYY-MM-DD');
-    const endDate = end.format('YYYY-MM-DD');
-
     fetchDashboardStats({
-      startDate,
-      endDate
+      startDate: start.format('YYYY-MM-DD'),
+      endDate: end.format('YYYY-MM-DD')
     });
   };
 
@@ -172,7 +170,7 @@ const UserDashboard = () => {
     },
     { 
       icon: <FireOutlined style={{ color: '#FF4D4F' }} />, 
-      count: dashboardStats.hotLeads, 
+      count: dashboardStats.hotActiveLeads,
       title: "Hot Stage Leads" 
     },
   ];
@@ -229,9 +227,9 @@ const UserDashboard = () => {
   ];
 
   // Helper function to calculate conversion ratio
-  const calculateConversionRatio = (salesLeads, totalLeads) => {
-    if (!totalLeads) return 0;
-    return Math.round((salesLeads / totalLeads) * 100);
+  const calculateConversionRatio = (salesLeads, totalPeriodLeads) => {
+    if (!totalPeriodLeads) return 0;
+    return Math.round((salesLeads / totalPeriodLeads) * 100);
   };
 
   return (
@@ -255,78 +253,69 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      <Row gutter={[24, 24]}>
-        {cardData.map((card, index) => (
-          <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
-            <Card className="stat-card">
-              <div className="stat-icon">{card.icon}</div>
-              <div className="stat-content">
-                <h1 className="stat-count">{card.count}</h1>
-                <p className="stat-title">{card.title}</p>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {loading ? (
+        <TableSkeleton />
+      ) : (
+        <>
+          <Row gutter={[24, 24]}>
+            {cardData.map((card, index) => (
+              <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
+                <Card className="stat-card">
+                  <div className="stat-icon">{card.icon}</div>
+                  <div className="stat-content">
+                    <h1 className="stat-count">{card.count}</h1>
+                    <p className="stat-title">{card.title}</p>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
 
-      <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
-        <Col xs={24} lg={12}>
-          <Card className="achievement-card">
-            <div className="achievement-content">
-              <div className="achievement-main">
-                <h1 className="achievement-number">
-                  {calculateConversionRatio(dashboardStats.salesLeads, dashboardStats.totalPeriodLeads)}%
-                </h1>
-                <p className="achievement-text">My Conversion Ratio</p>
-              </div>
+          <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+            <Col xs={24} lg={12}>
+              <Card className="achievement-card">
+                <div className="achievement-content">
+                  <div className="achievement-main">
+                    <h1 className="achievement-number">
+                      {calculateConversionRatio(dashboardStats.salesLeads, dashboardStats.totalPeriodLeads)}%
+                    </h1>
+                    <p className="achievement-text">My Conversion Ratio</p>
+                  </div>
 
-              <div className="achievement-stats">
-                <div className="stat-item">
-                  <CheckCircleOutlined className="stat-icon active" />
-                  <div className="stat-info">
-                    <span className="stat-value">{dashboardStats.activeLeads}</span>
-                    <span className="stat-label">Active Leads</span>
+                  <div className="achievement-stats">
+                    <div className="stat-item">
+                      <CheckCircleOutlined className="stat-icon active" />
+                      <div className="stat-info">
+                        <span className="stat-value">{dashboardStats.activeLeads}</span>
+                        <span className="stat-label">Active Leads</span>
+                      </div>
+                    </div>
+                    <div className="stat-item">
+                      <FireOutlined className="stat-icon hot" />
+                      <div className="stat-info">
+                        <span className="stat-value">{dashboardStats.hotActiveLeads}</span>
+                        <span className="stat-label">Hot Leads</span>
+                      </div>
+                    </div>
+                    <div className="stat-item">
+                      <CheckCircleOutlined className="stat-icon sales" />
+                      <div className="stat-info">
+                        <span className="stat-value">{dashboardStats.salesLeads}</span>
+                        <span className="stat-label">Sales Leads</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="stat-item">
-                  <FireOutlined className="stat-icon hot" />
-                  <div className="stat-info">
-                    <span className="stat-value">{dashboardStats.hotActiveLeads}</span>
-                    <span className="stat-label">Hot Leads</span>
-                  </div>
-                </div>
-                <div className="stat-item">
-                  <DollarCircleOutlined className="stat-icon sales" />
-                  <div className="stat-info">
-                    <span className="stat-value">{dashboardStats.salesLeads}</span>
-                    <span className="stat-label">Sales Leads</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card className="chart-card">
-            <div className="chart-summary">
-              <div className="summary-item">
-                <Typography.Text type="secondary">My Total Leads Created</Typography.Text>
-                <Typography.Title level={3}>
-                  {dashboardStats.leadsVsClosedStats?.summary.totalCreated || 0}
-                </Typography.Title>
-              </div>
-              <div className="summary-item">
-                <Typography.Text type="secondary">My Total Leads Closed</Typography.Text>
-                <Typography.Title level={3}>
-                  {dashboardStats.leadsVsClosedStats?.summary.totalClosed || 0}
-                </Typography.Title>
-              </div>
-            </div>
-            
-            <Column {...leadsVsDealsConfig} height={300} />
-          </Card>
-        </Col>
-      </Row>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card className="chart-card">
+                <Column {...leadsVsDealsConfig} />
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
     </div>
   );
 };
