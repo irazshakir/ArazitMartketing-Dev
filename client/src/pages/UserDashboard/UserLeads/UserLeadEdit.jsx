@@ -16,6 +16,7 @@ const UserLeadEdit = () => {
   const [loading, setLoading] = useState(true);
   const [assignedUser, setAssignedUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -39,28 +40,61 @@ const UserLeadEdit = () => {
     fetchLead();
   }, [id]);
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const token = localStorage.getItem('user_jwt');
-        const response = await axios.get('/api/current-user', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem('user_jwt');
+      if (!token) {
+        console.error('UserLeadEdit - No token found');
+        message.error('Please login again');
+        return;
+      }
+
+      console.log('UserLeadEdit - Fetching current user with token:', token ? 'Token exists' : 'No token');
+
+      const response = await axios.get('/api/user-leads/current-user', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }).catch(error => {
+        console.error('UserLeadEdit - Axios error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers
           }
         });
-        
-        if (response.data.status === 'success') {
-          setCurrentUser(response.data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-        message.error('Failed to get current user');
+        throw error;
+      });
+      
+      console.log('UserLeadEdit - Current user API response:', response.data);
+      
+      if (response.data.success) {
+        console.log('UserLeadEdit - Current user fetched:', response.data.data);
+        setCurrentUser(response.data.data);
+      } else {
+        console.error('UserLeadEdit - API returned success false:', response.data);
+        message.error(response.data.error || 'Failed to get user data');
       }
-    };
-
-    fetchCurrentUser();
-  }, []);
+    } catch (error) {
+      console.error('UserLeadEdit - Error fetching current user:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 401) {
+        message.error('Session expired. Please login again');
+        // Optionally redirect to login
+      } else {
+        message.error(`Failed to get current user: ${error.response?.data?.error || error.message}`);
+      }
+    }
+  };
 
   const handleSendMessage = (message) => {
     // Handle WhatsApp message sending
@@ -107,6 +141,57 @@ const UserLeadEdit = () => {
     }
   };
 
+  const handleAssigneeChange = async (userId) => {
+    try {
+      const token = localStorage.getItem('user_jwt');
+      console.log('UserLeadEdit - Assigning lead:', {
+        leadId: id,
+        userId: userId
+      });
+
+      const response = await axios.patch(`/api/user-leads/${id}/assign`, { 
+        assigned_user: userId
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.success) {
+        setAssignedUser(userId);
+        message.success('Lead assigned successfully');
+      }
+    } catch (error) {
+      console.error('UserLeadEdit - Error assigning lead:', error);
+      message.error('Failed to assign lead');
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('user_jwt');
+        const response = await axios.get('/api/user-leads/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        setUsers(response.data.data);
+      } catch (error) {
+        console.error('UserLeadEdit - Error fetching users:', error);
+        message.error('Failed to fetch users');
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
@@ -132,6 +217,21 @@ const UserLeadEdit = () => {
         <Title level={4} style={{ margin: 0, flex: 1 }}>
           Lead Details
         </Title>
+        
+        <Select
+          placeholder="Assign to user"
+          onChange={handleAssigneeChange}
+          value={assignedUser}
+          style={{ width: 200 }}
+          loading={loading}
+          suffixIcon={<UserOutlined />}
+        >
+          {users.map(user => (
+            <Select.Option key={user.id} value={user.id}>
+              {user.name}
+            </Select.Option>
+          ))}
+        </Select>
       </div>
 
       <Layout style={{ 
@@ -149,6 +249,7 @@ const UserLeadEdit = () => {
             onSendMessage={handleSendMessage}
             onAddNote={handleAddNote}
             currentAssignee={assignedUser}
+            onAssigneeChange={handleAssigneeChange}
             id={id}
             phone={lead?.phone}
           />
