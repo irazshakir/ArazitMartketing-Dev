@@ -3,91 +3,19 @@ import { supabase } from '../config/database.js';
 const UserDashboardModel = {
   getUserDashboardStats: async ({ currentDate, currentMonthStart, userId, startDate, endDate, timeRange }) => {
     try {
-      console.log('Model received params:', {
-        userId,
-        currentDate,
-        currentMonthStart,
-        startDate,
-        endDate,
-        timeRange
-      });
-
-      if (!userId) {
-        throw new Error('User ID is required');
-      }
-
-      // 1. Today's Leads
-      const { data: todayLeads } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .gte('created_at', `${currentDate}T00:00:00`)
-        .lt('created_at', `${currentDate}T23:59:59`);
-
-      // 2. New Customers Added
-      let newCustomersQuery = supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId);
-
-      if (startDate && endDate) {
-        newCustomersQuery = newCustomersQuery
-          .gte('created_at', `${startDate}T00:00:00`)
-          .lt('created_at', `${endDate}T23:59:59`);
-      } else {
-        newCustomersQuery = newCustomersQuery
-          .gte('created_at', `${currentMonthStart}T00:00:00`)
-          .lt('created_at', `${currentDate}T23:59:59`);
-      }
-
-      const { data: newCustomers } = await newCustomersQuery;
-
-      // 3. Today's Followups
-      const { data: followups } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .eq('fu_date', currentDate);
-
-      // 4. Hot Stage Leads
-      const { data: hotLeads } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .eq('lead_stage', 3);
-
-      // 5. Active Leads
-      const { data: activeLeads } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .eq('lead_active_status', true);
-
-      // 6. Hot Active Leads
-      const { data: hotActiveLeads } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .eq('lead_stage', 3)
-        .eq('lead_active_status', true);
-
-      // 7. Sales Leads
-      const { data: salesLeads } = await supabase
-        .from('leads')
-        .select('count')
-        .eq('assigned_user', userId)
-        .eq('lead_stage', 4)
-        .gte('won_at', `${currentMonthStart}T00:00:00`)
-        .lte('won_at', `${currentDate}T23:59:59`);
-
       // Calculate period dates based on timeRange
       let periodStart, periodEnd;
+      
       if (timeRange) {
         const today = new Date();
         switch (timeRange) {
           case '7days':
             periodStart = new Date(today);
             periodStart.setDate(today.getDate() - 7);
+            periodEnd = today;
+            break;
+          case 'currentMonth':
+            periodStart = new Date(today.getFullYear(), today.getMonth(), 1);
             periodEnd = today;
             break;
           case 'previousMonth':
@@ -104,30 +32,77 @@ const UserDashboardModel = {
             periodEnd = new Date(currentDate);
         }
       } else {
-        periodStart = new Date(currentMonthStart);
-        periodEnd = new Date(currentDate);
+        periodStart = startDate ? new Date(startDate) : new Date(currentMonthStart);
+        periodEnd = endDate ? new Date(endDate) : new Date(currentDate);
       }
 
       const queryStartDate = periodStart.toISOString().split('T')[0];
       const queryEndDate = periodEnd.toISOString().split('T')[0];
 
-      // Get total period leads
-      const { data: totalLeads } = await supabase
+      // New Customers (All leads in date range)
+      const { data: newCustomers } = await supabase
         .from('leads')
         .select('count')
         .eq('assigned_user', userId)
         .gte('created_at', `${queryStartDate}T00:00:00`)
         .lte('created_at', `${queryEndDate}T23:59:59`);
 
+      // Active Leads
+      const { data: activeLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_active_status', true);
+
+      // Hot Active Leads
+      const { data: hotActiveLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_stage', 3)
+        .eq('lead_active_status', true)
+        .gte('created_at', `${queryStartDate}T00:00:00`)
+        .lte('created_at', `${queryEndDate}T23:59:59`);
+
+      // Sales Leads (won in date range)
+      const { data: salesLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_stage', 4)
+        .gte('won_at', `${queryStartDate}T00:00:00`)
+        .lte('won_at', `${queryEndDate}T23:59:59`);
+
+      // Total Leads in period (for conversion ratio)
+      const { data: totalPeriodLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .gte('created_at', `${queryStartDate}T00:00:00`)
+        .lte('created_at', `${queryEndDate}T23:59:59`);
+
+      // Today's stats remain unchanged
+      const { data: todayLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .gte('created_at', `${currentDate}T00:00:00`)
+        .lt('created_at', `${currentDate}T23:59:59`);
+
+      const { data: todayFollowups } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('fu_date', currentDate);
+
       return {
         todayLeads: todayLeads?.[0]?.count || 0,
         newCustomers: newCustomers?.[0]?.count || 0,
-        todayFollowups: followups?.[0]?.count || 0,
-        hotLeads: hotLeads?.[0]?.count || 0,
+        todayFollowups: todayFollowups?.[0]?.count || 0,
         activeLeads: activeLeads?.[0]?.count || 0,
         hotActiveLeads: hotActiveLeads?.[0]?.count || 0,
         salesLeads: salesLeads?.[0]?.count || 0,
-        totalPeriodLeads: totalLeads?.[0]?.count || 0,
+        totalPeriodLeads: totalPeriodLeads?.[0]?.count || 0,
         periodStart: queryStartDate,
         periodEnd: queryEndDate
       };
