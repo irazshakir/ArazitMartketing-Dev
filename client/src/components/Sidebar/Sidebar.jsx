@@ -137,6 +137,40 @@ const Sidebar = () => {
     },
   ];
 
+  const userMenuItems = [
+    { 
+      key: '/dashboard',
+      icon: <HomeOutlined />, 
+      label: 'Dashboard',
+      path: '/dashboard'
+    },
+    { 
+      key: '/leads',
+      icon: <UserOutlined />, 
+      label: 'Leads',
+      path: '/leads'
+    },
+    { 
+      key: '/conversations',
+      icon: <MessageOutlined />, 
+      label: 'Conversations',
+      path: '/conversations'
+    },
+    { 
+      key: 'analytics', 
+      icon: <BarChartOutlined />, 
+      label: 'Analytics',
+      children: [
+        { 
+          key: '/reports',
+          icon: <PieChartOutlined />,
+          label: 'Reports',
+          path: '/reports'
+        }
+      ]
+    }
+  ];
+
   const getMenuItems = () => {
     switch (userRole) {
       case 'admin':
@@ -144,8 +178,9 @@ const Sidebar = () => {
       case 'manager':
         // Add manager menu items when needed
         return [];
+      case 'user':
+        return userMenuItems;
       default:
-        // Add user menu items when needed
         return [];
     }
   };

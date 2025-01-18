@@ -27,6 +27,9 @@ import Invoices from './pages/Invoices/Index';
 import Accounts from './pages/Accounts/Index';
 import CompanyBranches from './pages/Settings/CompanyBranches';
 import Reports from './pages/Reports/Reports';
+import UserReports from './pages/UserDashboard/UserReports/UserReports';
+import UserLeadIndex from './pages/UserDashboard/UserLeads/UserLeadIndex';
+import UserConversationsIndex from './pages/UserDashboard/UserConversations/UserConversationsIndex';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -162,9 +165,10 @@ function App() {
         }
       >
         <Route path="dashboard" element={<UserDashboardContent />} />
-        <Route path="leads" element={<Leads />} />
+        <Route path="leads" element={<UserLeadIndex />} />
         <Route path="leads/:id" element={<LeadEdit />} />
-        <Route path="conversations" element={<Conversations />} />
+        <Route path="conversations" element={<UserConversationsIndex />} />
+        <Route path="reports" element={<UserReports />} />
       </Route>
 
       {/* Redirect root to appropriate dashboard */}

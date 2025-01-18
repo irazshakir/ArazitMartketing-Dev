@@ -1,0 +1,122 @@
+.dashboard-container {
+  padding: 24px;
+}
+
+.dashboard-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-card {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.stat-icon {
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-count {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.stat-title {
+  color: #909399;
+  margin: 0;
+}
+
+.achievement-card {
+  height: 100%;
+}
+
+.achievement-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.achievement-main {
+  text-align: center;
+}
+
+.achievement-number {
+  font-size: 48px;
+  font-weight: 600;
+  color: #28C76F;
+  margin: 0;
+}
+
+.achievement-text {
+  color: #909399;
+  margin: 0;
+}
+
+.achievement-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-weight: 600;
+}
+
+.stat-label {
+  color: #909399;
+  font-size: 12px;
+}
+
+.stat-icon.active {
+  color: #28C76F;
+}
+
+.stat-icon.hot {
+  color: #FF4D4F;
+}
+
+.stat-icon.sales {
+  color: #1890FF;
+}
+
+.chart-card {
+  height: 100%;
+}
+
+.chart-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.summary-item {
+  text-align: center;
+} 
