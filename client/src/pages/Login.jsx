@@ -6,7 +6,6 @@ import ArazitLogo from '../assets/Arazit.svg';
 import { authService } from '../services/authService';
 import { message } from 'antd';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const { Title, Text } = Typography;
 
@@ -16,14 +15,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged out
-    const session = localStorage.getItem('session');
-    if (!session) {
-      // Already logged out, stay on login page
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // No token, stay on login page
       return;
     }
 
-    // If session exists, verify it
+    // If session exists, verify it using existing authService
     const checkSession = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
@@ -42,6 +41,8 @@ const Login = () => {
         }
       } catch (error) {
         console.error('Session verification failed:', error);
+        // Clear invalid token
+        localStorage.removeItem('token');
       }
     };
 
@@ -54,9 +55,27 @@ const Login = () => {
       const response = await authService.signIn(values);
       const { userData, token } = response;
       
-      // Save token to localStorage
+      // Save token to localStorage (this will work for both admin and user)
       if (token) {
         localStorage.setItem('token', token);
+        
+        // Also store the JWT token for user dashboard
+        if (userData.roles.role_name === 'user') {
+          try {
+            // Generate JWT token for user dashboard
+            const jwtResponse = await authService.generateUserToken({
+              userId: userData.id,
+              role: userData.roles.role_name
+            });
+            
+            if (jwtResponse.token) {
+              localStorage.setItem('user_jwt', jwtResponse.token);
+            }
+          } catch (jwtError) {
+            console.error('JWT generation failed:', jwtError);
+            // Continue with normal flow even if JWT generation fails
+          }
+        }
       }
       
       // Keep existing role-based routing

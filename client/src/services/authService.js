@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import axios from 'axios';
 
 export const authService = {
   async signIn({ email, password }) {
@@ -22,42 +23,78 @@ export const authService = {
         throw new Error('Your account is inactive. Please contact administrator.');
       }
 
-      // 4. Deactivate any existing active sessions for this user
-      await supabase
-        .from('sessions')
-        .update({ is_active: false })
-        .eq('user_id', userData.id)
-        .eq('is_active', true);
+      let sessionToken;
+      let sessionData;
 
-      // 5. Create new session
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('sessions')
-        .insert([{
-          user_id: userData.id,
-          token: Date.now().toString(),
-          ip_address: window.clientInformation?.userAgentData?.platform || 'unknown',
-          user_agent: navigator.userAgent,
-          is_active: true,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          device_info: {
-            platform: window.clientInformation?.userAgentData?.platform,
-            mobile: window.clientInformation?.userAgentData?.mobile,
-            browser: navigator.userAgent
+      // 4. For user role, generate JWT token first
+      if (userData.roles.role_name === 'user') {
+        try {
+          console.log('Attempting to generate JWT for user:', userData.id);
+          const jwtResponse = await this.generateUserToken({
+            userId: userData.id,
+            role: userData.roles.role_name
+          });
+
+          if (jwtResponse.status === 'success') {
+            console.log('JWT generated successfully');
+            sessionToken = jwtResponse.token;
+            sessionData = jwtResponse.session;
+            localStorage.setItem('user_jwt', jwtResponse.token);
+          } else {
+            console.error('Invalid JWT response:', jwtResponse);
           }
-        }])
-        .select()
-        .single();
+        } catch (jwtError) {
+          console.error('JWT generation failed:', {
+            error: jwtError,
+            response: jwtError.response?.data,
+            status: jwtError.response?.status
+          });
+          // Continue with normal flow even if JWT generation fails
+        }
+      }
 
-      if (sessionError) throw sessionError;
+      // 5. If no JWT token was generated (non-user role or JWT generation failed)
+      if (!sessionToken) {
+        // Deactivate existing sessions
+        await supabase
+          .from('sessions')
+          .update({ is_active: false })
+          .eq('user_id', userData.id)
+          .eq('is_active', true);
+
+        // Create new session with initial token
+        sessionToken = Date.now().toString();
+        const { data, error: sessionError } = await supabase
+          .from('sessions')
+          .insert([{
+            user_id: userData.id,
+            token: sessionToken,
+            ip_address: window.clientInformation?.userAgentData?.platform || 'unknown',
+            user_agent: navigator.userAgent,
+            is_active: true,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            device_info: {
+              platform: window.clientInformation?.userAgentData?.platform,
+              mobile: window.clientInformation?.userAgentData?.mobile,
+              browser: navigator.userAgent
+            }
+          }])
+          .select()
+          .single();
+
+        if (sessionError) throw sessionError;
+        sessionData = data;
+      }
 
       // 6. Store session and user data
       localStorage.setItem('session', JSON.stringify(sessionData));
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', sessionToken);
       
       return {
         session: sessionData,
         userData,
-        token: sessionData.token
+        token: sessionToken
       };
     } catch (error) {
       console.error('Sign in error:', error);
@@ -103,7 +140,7 @@ export const authService = {
       const { data: sessionData, error: sessionError } = await supabase
         .from('sessions')
         .select('*')
-        .eq('id', session.id)
+        .eq('user_id', userData.id)
         .eq('is_active', true)
         .single();
 
@@ -111,6 +148,8 @@ export const authService = {
         // Clear local storage if session is invalid
         localStorage.removeItem('session');
         localStorage.removeItem('user');
+        localStorage.removeItem('user_jwt');
+        localStorage.removeItem('token');
         return null;
       }
 
@@ -123,6 +162,8 @@ export const authService = {
       console.error('Get current user error:', error);
       localStorage.removeItem('session');
       localStorage.removeItem('user');
+      localStorage.removeItem('user_jwt');
+      localStorage.removeItem('token');
       return null;
     }
   },
@@ -145,6 +186,27 @@ export const authService = {
     } catch (error) {
       console.error('Reset password error:', error);
       throw new Error(error.message || 'Failed to send reset password email');
+    }
+  },
+
+  generateUserToken: async (userData) => {
+    try {
+      console.log('Generating user token for:', userData);
+      const response = await axios.post('/api/generate-user-token', userData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Token generation response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error generating user token:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error;
     }
   }
 }; 

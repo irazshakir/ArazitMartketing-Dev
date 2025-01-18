@@ -1,4 +1,4 @@
-import { Typography, Row, Col, Card, Select, DatePicker } from 'antd';
+import { Typography, Row, Col, Card, Select, DatePicker, message } from 'antd';
 import {
   ClockCircleOutlined,
   UserAddOutlined,
@@ -19,6 +19,7 @@ const { RangePicker } = DatePicker;
 const UserDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7days');
+  const [currentUser, setCurrentUser] = useState(null);
   const [dashboardStats, setDashboardStats] = useState({
     todayLeads: 0,
     newCustomers: 0,
@@ -32,33 +33,89 @@ const UserDashboard = () => {
     periodEnd: ''
   });
 
-  // Fetch initial stats on component mount
+  // Fetch current user on component mount
   useEffect(() => {
-    fetchDashboardStats();
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('user_jwt');
+        if (!token) {
+          console.error('No valid JWT token found');
+          message.error('Please login again');
+          return;
+        }
+
+        const response = await axios.get('/api/user-dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.data?.success) {
+          setCurrentUser(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        message.error('Failed to get current user');
+      }
+    };
+
+    fetchCurrentUser();
   }, []);
+
+  // Fetch dashboard stats when currentUser is available
+  useEffect(() => {
+    if (currentUser) {
+      fetchDashboardStats();
+    }
+  }, [currentUser]);
 
   const fetchDashboardStats = async (options = {}) => {
     try {
       setLoading(true);
-      const { startDate, endDate, timeRange } = options;
-      
-      const params = {
-        timeRange: timeRange || selectedTimeRange
-      };
-
-      // Only add date parameters if they exist
-      if (startDate && endDate) {
-        params.startDate = startDate;
-        params.endDate = endDate;
+      const token = localStorage.getItem('user_jwt');
+      if (!token) {
+        message.error('Please login again');
+        return;
       }
 
-      const response = await axios.get('/api/dashboard/user/stats', { params });
+      console.log('Fetching stats with token:', token);
+
+      const response = await axios.get('/api/user-dashboard/stats', {
+        params: {
+          timeRange: options.timeRange || selectedTimeRange,
+          ...(options.startDate && options.endDate ? { 
+            startDate: options.startDate, 
+            endDate: options.endDate 
+          } : {})
+        },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Stats response:', response.data);
 
       if (response.data?.success) {
         setDashboardStats(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        token: localStorage.getItem('user_jwt')
+      });
+
+      if (error.response?.status === 401) {
+        message.error('Session expired. Please login again');
+        // Redirect to login page
+        window.location.href = '/login';
+        return;
+      }
+
+      message.error('Failed to fetch dashboard statistics');
       setDashboardStats({
         todayLeads: 0,
         newCustomers: 0,
