@@ -154,12 +154,30 @@ router.post('/signin', async (req, res) => {
       });
     }
 
-    // Generate JWT token
+    // Generate proper JWT token with user data
     const token = jwt.sign(
-      { userId: userData.id },
+      { 
+        userId: userData.id,
+        email: userData.email,
+        role: userData.roles?.role_name 
+      },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+
+    // Create session record
+    const { error: sessionError } = await supabase
+      .from('sessions')
+      .insert([
+        {
+          user_id: userData.id,
+          token: token,
+          is_active: true,
+          last_activity_at: new Date().toISOString()
+        }
+      ]);
+
+    if (sessionError) throw sessionError;
 
     res.status(200).json({
       status: 'success',

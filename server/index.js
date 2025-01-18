@@ -23,6 +23,7 @@ import branchRoutes from './routes/branches.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
+import userDashboardRoutes from './routes/userDashboard.js';
 
 // Initialize dotenv
 dotenv.config();
@@ -39,7 +40,10 @@ if (!fs.existsSync(tempDir)) {
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:5173"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(fileUpload({
   useTempFiles: true,
@@ -59,6 +63,7 @@ app.use('/api', branchRoutes);
 app.use('/api', webhookRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api', userDashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

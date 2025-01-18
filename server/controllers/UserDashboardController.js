@@ -1,0 +1,67 @@
+import { UserDashboardModel } from '../models/index.js';
+import jwt from 'jsonwebtoken';
+
+const UserDashboardController = {
+  getUserDashboardStats: async (req, res) => {
+    try {
+      // Get user data from middleware
+      const userData = req.user;
+      const userId = userData.id;
+
+      console.log('Controller received request:', {
+        userId,
+        query: req.query
+      });
+
+      const { startDate, endDate, timeRange } = req.query;
+
+      // Get current date in YYYY-MM-DD format
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      // Get first day of current month
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      const currentMonthStart = firstDayOfMonth.toISOString().split('T')[0];
+
+      // Get dashboard stats with user ID
+      const [stats, leadsVsClosedStats] = await Promise.all([
+        UserDashboardModel.getUserDashboardStats({
+          currentDate,
+          currentMonthStart,
+          userId,
+          startDate,
+          endDate,
+          timeRange
+        }),
+        UserDashboardModel.getUserLeadsVsClosedStats({
+          currentMonthStart,
+          currentDate,
+          userId,
+          startDate,
+          endDate
+        })
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          ...stats,
+          leadsVsClosedStats
+        }
+      });
+    } catch (error) {
+      console.error('Controller error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching user dashboard statistics',
+        error: error.message
+      });
+    }
+  }
+};
+
+export default UserDashboardController; 

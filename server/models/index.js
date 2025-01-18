@@ -6,6 +6,7 @@ import CustomUmrahPriceModel from './CustomUmrahPriceModel.js';
 import InvoiceModel from './InvoiceModel.js';
 import DashboardModel from './DashboardModel.js';
 import ReportsModel from './ReportsModel.js';
+import UserDashboardModel from './UserDashboardModel.js';
 
 // Direct model definitions
 export const ProductModel = {
@@ -377,6 +378,7 @@ export {
   CustomUmrahPriceModel,
   InvoiceModel,
   DashboardModel,
-  ReportsModel
+  ReportsModel,
+  UserDashboardModel
 };
 
