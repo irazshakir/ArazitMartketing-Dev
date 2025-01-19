@@ -20,6 +20,7 @@ import theme from '../../theme';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { BACKEND_URL } from '../../constants/config';
+import EmojiPicker from 'emoji-picker-react';
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -70,6 +71,7 @@ const ChatBox = ({
   const [socket, setSocket] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Fetch active users
   useEffect(() => {
@@ -358,6 +360,13 @@ const ChatBox = ({
     }
   };
 
+  // Add this handler for emoji selection
+  const onEmojiClick = (emojiObject) => {
+    const cursor = message.length;
+    const text = message.slice(0, cursor) + emojiObject.emoji + message.slice(cursor);
+    setMessage(text);
+  };
+
   const renderMessages = () => {
     const combinedMessages = [
       ...messages.map(msg => ({
@@ -511,11 +520,23 @@ const ChatBox = ({
         >
           <TabPane tab="Reply" key="reply">
             <div className={styles.messageInput}>
-              <Button 
-                type="text" 
-                icon={<SmileOutlined />}
-                className={styles.iconButton}
-              />
+              <div className={styles.emojiPickerContainer}>
+                <Button 
+                  type="text" 
+                  icon={<SmileOutlined />}
+                  className={styles.iconButton}
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                />
+                {showEmojiPicker && (
+                  <div className={styles.emojiPickerWrapper}>
+                    <EmojiPicker
+                      onEmojiClick={onEmojiClick}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
               <Upload
                 beforeUpload={(file) => {
                   if (file.type.startsWith('audio/')) {
