@@ -25,6 +25,8 @@ import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
 import userDashboardRoutes from './routes/userDashboard.js';
 import userLeadsRouter from './routes/userLeads.js';
+import templateMessageRoutes from './routes/templateMessages.js';
+import cannedMessagesRoutes from './routes/cannedMessages.js';
 
 // Initialize dotenv
 dotenv.config();
@@ -66,6 +68,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api', userDashboardRoutes);
 app.use('/api', userLeadsRouter);
+app.use('/api', templateMessageRoutes);
+app.use('/api', cannedMessagesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

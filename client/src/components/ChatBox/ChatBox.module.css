@@ -83,19 +83,30 @@
 
 .messageInput {
   display: flex;
-  align-items: flex-end;
-  background-color: #fff;
-  border-radius: 0 0 8px 8px;
+  align-items: center;
+  gap: 8px;
   padding: 8px;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  position: relative;
+  width: 100%;
+}
+
+/* Container for the textarea */
+.textAreaContainer {
+  flex: 1;
+  position: relative;
+  min-width: 0; /* This prevents flex item from overflowing */
+  width: 100%;
 }
 
 .textarea {
+  width: 100%;
+  margin: 0;
   resize: none;
-  border: none;
-  padding: 8px 12px;
-  margin: 0 8px;
-  border-radius: 8px;
-  flex: 1;
+  border-radius: 4px;
+  padding: 4px 11px;
+  min-height: 32px !important;
 }
 
 .textarea:focus {
@@ -103,6 +114,7 @@
 }
 
 .iconButton {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;

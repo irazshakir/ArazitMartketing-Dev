@@ -733,7 +733,7 @@ const ChatBox = ({
                       loading={loadingTemplates}
                     />
                   </Dropdown>
-                  <div style={{ position: 'relative' }}>
+                  <div className={styles.textAreaContainer}>
                     {cannedMessagesMenu}
                     <TextArea
                       value={message}
