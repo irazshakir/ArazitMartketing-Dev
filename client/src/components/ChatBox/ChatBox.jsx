@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Typography, Tooltip, Tabs, Select, Alert, Avatar, Upload, Modal, message as antMessage } from 'antd';
+import { Input, Button, Typography, Tooltip, Tabs, Select, Alert, Avatar, Upload, Modal, message as antMessage, Dropdown, Menu } from 'antd';
 import {
   SendOutlined,
   SmileOutlined,
@@ -13,7 +13,8 @@ import {
   UserOutlined,
   AudioOutlined,
   FileOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import styles from './ChatBox.module.css';
 import theme from '../../theme';
@@ -72,6 +73,11 @@ const ChatBox = ({
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [cannedMessages, setCannedMessages] = useState([]);
+  const [showCannedMessages, setShowCannedMessages] = useState(false);
+  const [loadingCannedMessages, setLoadingCannedMessages] = useState(false);
 
   // Fetch active users
   useEffect(() => {
@@ -147,6 +153,65 @@ const ChatBox = ({
       fetchNotes();
     }
   }, [id]);
+
+  // Fetch templates
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const token = localStorage.getItem('user_jwt');
+        const response = await axios.get('/api/template-messages', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.data && Array.isArray(response.data)) {
+          setTemplates(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch templates:', error);
+        antMessage.error('Failed to load templates');
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
+  // Fetch canned messages
+  useEffect(() => {
+    const fetchCannedMessages = async () => {
+      setLoadingCannedMessages(true);
+      try {
+        const token = localStorage.getItem('user_jwt');
+        // Log the request for debugging
+        console.log('Fetching canned messages...');
+        
+        const response = await axios.get('/api/canned-messages', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('Canned messages response:', response.data);
+        
+        if (response.data && Array.isArray(response.data)) {
+          setCannedMessages(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch canned messages:', error);
+        antMessage.error('Failed to load canned messages');
+      } finally {
+        setLoadingCannedMessages(false);
+      }
+    };
+
+    fetchCannedMessages();
+  }, []);
 
   // Get assigned user name
   const getAssignedUserName = () => {
@@ -367,6 +432,110 @@ const ChatBox = ({
     setMessage(text);
   };
 
+  // Helper function to extract plain text from template JSON
+  const extractTextFromTemplate = (templateMessage) => {
+    try {
+      if (typeof templateMessage === 'string') {
+        // Try to parse if it's a JSON string
+        const parsed = JSON.parse(templateMessage);
+        if (parsed.blocks) {
+          // Extract text from blocks and preserve emojis
+          return parsed.blocks
+            .map(block => {
+              let text = block.text;
+              // If there are entity ranges (emojis), make sure they're preserved
+              if (block.entityRanges && parsed.entityMap) {
+                block.entityRanges.forEach(range => {
+                  const entity = parsed.entityMap[range.key];
+                  if (entity.type === 'emoji' && entity.data.emojiUnicode) {
+                    // Preserve the emoji in the text
+                    text = text.trim();
+                  }
+                });
+              }
+              return text;
+            })
+            .filter(text => text.trim()) // Remove empty lines
+            .join(' '); // Join with spaces instead of newlines
+        }
+      }
+      // If it's already a string, return as is
+      return templateMessage;
+    } catch (error) {
+      console.error('Error parsing template:', error);
+      return templateMessage; // Return original if parsing fails
+    }
+  };
+
+  // Template menu items
+  const templateMenu = (
+    <Menu className={styles.templateMenu}>
+      {templates.map(template => (
+        <Menu.Item 
+          key={template.id}
+          onClick={() => {
+            try {
+              const messageText = extractTextFromTemplate(template.template_message);
+              setMessage(messageText);
+            } catch (error) {
+              console.error('Error setting template:', error);
+              antMessage.error('Failed to load template content');
+            }
+          }}
+        >
+          {template.title}
+        </Menu.Item>
+      ))}
+      {templates.length === 0 && (
+        <Menu.Item disabled>No templates available</Menu.Item>
+      )}
+    </Menu>
+  );
+
+  // Handle text area change with canned messages trigger
+  const handleMessageChange = (e) => {
+    const newValue = e.target.value;
+    setMessage(newValue);
+    
+    // Show canned messages dropdown when "/" is typed
+    if (newValue.endsWith('/')) {
+      setShowCannedMessages(true);
+    } else {
+      setShowCannedMessages(false);
+    }
+  };
+
+  // Canned messages menu
+  const cannedMessagesMenu = (
+    <Menu 
+      className={styles.cannedMessagesMenu}
+      style={{ 
+        display: showCannedMessages ? 'block' : 'none',
+        position: 'absolute',
+        bottom: '100%',
+        left: 0,
+        maxHeight: '200px',
+        overflowY: 'auto'
+      }}
+    >
+      {cannedMessages.map(msg => (
+        <Menu.Item 
+          key={msg.id}
+          onClick={() => {
+            // Remove the trigger character "/" and set the message
+            setMessage(message.slice(0, -1) + msg.message);
+            setShowCannedMessages(false);
+          }}
+        >
+          {msg.title}
+        </Menu.Item>
+      ))}
+      {cannedMessages.length === 0 && (
+        <Menu.Item disabled>No canned messages available</Menu.Item>
+      )}
+    </Menu>
+  );
+
   const renderMessages = () => {
     const combinedMessages = [
       ...messages.map(msg => ({
@@ -517,81 +686,98 @@ const ChatBox = ({
           activeKey={activeTab}
           onChange={setActiveTab}
           className={styles.tabs}
-        >
-          <TabPane tab="Reply" key="reply">
-            <div className={styles.messageInput}>
-              <div className={styles.emojiPickerContainer}>
-                <Button 
-                  type="text" 
-                  icon={<SmileOutlined />}
-                  className={styles.iconButton}
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                />
-                {showEmojiPicker && (
-                  <div className={styles.emojiPickerWrapper}>
-                    <EmojiPicker
-                      onEmojiClick={onEmojiClick}
-                      width={300}
-                      height={400}
+          items={[
+            {
+              key: 'reply',
+              label: 'Reply',
+              children: (
+                <div className={styles.messageInput}>
+                  <div className={styles.emojiPickerContainer}>
+                    <Button 
+                      type="text" 
+                      icon={<SmileOutlined />}
+                      className={styles.iconButton}
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    />
+                    {showEmojiPicker && (
+                      <div className={styles.emojiPickerWrapper}>
+                        <EmojiPicker
+                          onEmojiClick={onEmojiClick}
+                          width={300}
+                          height={400}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <Upload
+                    beforeUpload={handleUpload}
+                    fileList={fileList}
+                    showUploadList={false}
+                  >
+                    <Button 
+                      type="text" 
+                      icon={<PaperClipOutlined />}
+                      className={styles.iconButton}
+                      loading={uploading}
+                    />
+                  </Upload>
+                  <Dropdown 
+                    overlay={templateMenu} 
+                    trigger={['click']}
+                    disabled={loadingTemplates}
+                  >
+                    <Button
+                      type="text"
+                      icon={<FileTextOutlined />}
+                      className={styles.iconButton}
+                      loading={loadingTemplates}
+                    />
+                  </Dropdown>
+                  <div style={{ position: 'relative' }}>
+                    {cannedMessagesMenu}
+                    <TextArea
+                      value={message}
+                      onChange={handleMessageChange}
+                      onKeyPress={handleKeyPress}
+                      placeholder={placeholder}
+                      autoSize={{ minRows: 1, maxRows: 4 }}
+                      className={styles.textarea}
                     />
                   </div>
-                )}
-              </div>
-              <Upload
-                beforeUpload={(file) => {
-                  if (file.type.startsWith('audio/')) {
-                    handleUpload(file, 'audio');
-                  } else {
-                    handleUpload(file, 'document');
-                  }
-                  return false;
-                }}
-                fileList={fileList}
-                showUploadList={false}
-              >
-                <Button 
-                  type="text" 
-                  icon={<PaperClipOutlined />}
-                  className={styles.iconButton}
-                  loading={uploading}
-                />
-              </Upload>
-              <TextArea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={placeholder}
-                autoSize={{ minRows: 1, maxRows: 4 }}
-                className={styles.textarea}
-              />
-              <Button 
-                type="text"
-                icon={<SendOutlined />} 
-                onClick={handleSend}
-                className={styles.iconButton}
-              />
-            </div>
-          </TabPane>
-          <TabPane tab="Notes" key="notes">
-            <div className={`${styles.messageInput} ${styles.notesInput}`}>
-              <TextArea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Add an internal note..."
-                autoSize={{ minRows: 1, maxRows: 4 }}
-                className={styles.textarea}
-              />
-              <Button 
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={handleSend}
-                className={styles.sendButton}
-                style={{ backgroundColor: theme.colors.primary }}
-              />
-            </div>
-          </TabPane>
-        </Tabs>
+                  <Button 
+                    type="text"
+                    icon={<SendOutlined />} 
+                    onClick={handleSend}
+                    className={styles.iconButton}
+                  />
+                </div>
+              )
+            },
+            {
+              key: 'notes',
+              label: 'Notes',
+              children: (
+                <div className={`${styles.messageInput} ${styles.notesInput}`}>
+                  <TextArea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Add an internal note..."
+                    autoSize={{ minRows: 1, maxRows: 4 }}
+                    className={styles.textarea}
+                  />
+                  <Button 
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={handleSend}
+                    className={styles.sendButton}
+                    style={{ backgroundColor: theme.colors.primary }}
+                  />
+                </div>
+              )
+            }
+          ]}
+        />
       </div>
     </div>
   );

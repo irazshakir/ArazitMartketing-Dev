@@ -116,22 +116,16 @@ const Sidebar = () => {
           path: '/admin/settings/accounts' 
         },
         { 
-          key: '/admin/settings/branches', 
+          key: '/admin/settings/canned-messages', 
           icon: <BranchesOutlined />,
-          label: 'Branches',
-          path: '/admin/settings/branches' 
+          label: 'Canned Messages',
+          path: '/admin/settings/canned-messages' 
         },
         { 
-          key: '/admin/settings/hotel-rates', 
+          key: '/admin/settings/template-messages', 
           icon: <HotelOutlined />,
-          label: 'Hotel Rates',
-          path: '/admin/settings/hotel-rates' 
-        },
-        { 
-          key: '/admin/settings/packages', 
-          icon: <GiftOutlined />,
-          label: 'Readymade Packages',
-          path: '/admin/settings/packages' 
+          label: 'Template Messages',
+          path: '/admin/settings/template-messages' 
         }
       ]
     },

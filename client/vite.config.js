@@ -14,5 +14,16 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
+  },
+  define: {
+    'global': 'window',
+    'process.env': {}
+  },
+  resolve: {
+    alias: {
+      process: "process/browser",
+      stream: "stream-browserify",
+      util: "util"
+    }
   }
 })

@@ -31,6 +31,8 @@ import UserReports from './pages/UserDashboard/UserReports/UserReports';
 import UserLeadIndex from './pages/UserDashboard/UserLeads/UserLeadIndex';
 import UserConversationsIndex from './pages/UserDashboard/UserConversations/UserConversationsIndex';
 import UserLeadEdit from './pages/UserDashboard/UserLeads/UserLeadEdit';
+import CannedMessages from './pages/CannedMessages/CannedMessages';
+import TemplateMessages from './pages/TemplateMessages/TemplateMessages';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -119,6 +121,8 @@ function App() {
           <Route path="stages" element={<Stages />} />
           <Route path="lead-sources" element={<LeadSources />} />
           <Route path="company-branches" element={<CompanyBranches />} />
+          <Route path="canned-messages" element={<CannedMessages />} />
+          <Route path="template-messages" element={<TemplateMessages />} />
         </Route>
 
         {/* User Management Routes */}
