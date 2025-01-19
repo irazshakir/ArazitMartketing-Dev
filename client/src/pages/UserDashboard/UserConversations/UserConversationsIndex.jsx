@@ -85,6 +85,29 @@ const UserConversationsIndex = () => {
     fetchCurrentUser();
   }, []);
 
+  // Add users fetch effect
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('user_jwt');
+        const response = await axios.get('/api/user-leads/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.data.success) {
+          setUsers(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        message.error('Failed to fetch users');
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   const handleChatSelect = async (chat) => {
     try {
       const token = localStorage.getItem('user_jwt');
@@ -162,6 +185,37 @@ const UserConversationsIndex = () => {
     }
   };
 
+  // Add handleAssigneeChange method
+  const handleAssigneeChange = async (userId) => {
+    try {
+      const token = localStorage.getItem('user_jwt');
+      console.log('UserConversationsIndex - Assigning lead:', {
+        leadId: selectedChat.id,
+        userId: userId
+      });
+
+      const response = await axios.patch(`/api/user-leads/${selectedChat.id}/assign`, { 
+        assigned_user: userId
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.success) {
+        setSelectedChat(prev => ({
+          ...prev,
+          assigned_user: userId
+        }));
+        message.success('Lead assigned successfully');
+      }
+    } catch (error) {
+      console.error('UserConversationsIndex - Error assigning lead:', error);
+      message.error('Failed to assign lead');
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -182,13 +236,38 @@ const UserConversationsIndex = () => {
 
       <Content className={styles.chatBoxSection}>
         {selectedChat ? (
-          <ChatBox
-            onSendMessage={handleSendMessage}
-            onAddNote={handleAddNote}
-            currentAssignee={selectedChat.assigned_user}
-            id={selectedChat?.id}
-            phone={selectedChat?.phone}
-          />
+          <>
+            <div className={styles.chatHeader}>
+              <div className={styles.clientInfo}>
+                <Avatar size={32}>{selectedChat.name?.[0]}</Avatar>
+                <div className={styles.clientName}>
+                  <Text strong>{selectedChat.name}</Text>
+                  <WhatsAppOutlined className={styles.whatsappIcon} />
+                </div>
+              </div>
+              <Select
+                placeholder="Assign to"
+                value={selectedChat.assigned_user}
+                onChange={handleAssigneeChange}
+                style={{ width: 200 }}
+                loading={loading}
+                suffixIcon={<UserOutlined />}
+              >
+                {users.map(user => (
+                  <Option key={user.id} value={user.id}>
+                    {user.name}
+                  </Option>
+                ))}
+              </Select>
+            </div>
+            <ChatBox
+              onSendMessage={handleSendMessage}
+              onAddNote={handleAddNote}
+              currentAssignee={selectedChat.assigned_user}
+              id={selectedChat?.id}
+              phone={selectedChat?.phone}
+            />
+          </>
         ) : (
           <div className={styles.noChatSelected}>
             <Typography.Text type="secondary">

@@ -73,12 +73,11 @@ const Login = () => {
             }
           } catch (jwtError) {
             console.error('JWT generation failed:', jwtError);
-            // Continue with normal flow even if JWT generation fails
           }
         }
       }
       
-      // Keep existing role-based routing
+      // Update routing logic to match the correct paths
       switch (userData.roles.role_name) {
         case 'admin':
           navigate('/admin/dashboard');
@@ -86,8 +85,12 @@ const Login = () => {
         case 'manager':
           navigate('/manager/dashboard');
           break;
+        case 'user':
+          // Update this path to match the user dashboard route
+          navigate('/user/dashboard');
+          break;
         default:
-          navigate('/dashboard');
+          navigate('/user/dashboard');
       }
       
       message.success('Successfully logged in!');
