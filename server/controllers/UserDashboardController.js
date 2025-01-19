@@ -61,6 +61,36 @@ const UserDashboardController = {
         error: error.message
       });
     }
+  },
+
+  getUserReportStats: async (req, res) => {
+    try {
+      const userData = req.user;
+      const userId = userData.id;
+      const { startDate, endDate } = req.query;
+
+      const stats = await UserDashboardModel.getUserReportStats({
+        userId,
+        startDate,
+        endDate
+      });
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Controller error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching user report statistics',
+        error: error.message
+      });
+    }
   }
 };
 

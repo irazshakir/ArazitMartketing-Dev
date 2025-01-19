@@ -169,5 +169,6 @@ router.post('/generate-user-token', async (req, res) => {
 });
 
 router.get('/user-dashboard/stats', checkAuth, UserDashboardController.getUserDashboardStats);
+router.get('/user-dashboard/user-report-stats', checkAuth, UserDashboardController.getUserReportStats);
 
 export default router; 

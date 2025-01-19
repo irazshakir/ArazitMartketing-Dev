@@ -146,6 +146,89 @@ const UserDashboardModel = {
       console.error('Error in getUserLeadsVsClosedStats:', error);
       throw error;
     }
+  },
+
+  getUserReportStats: async ({ userId, startDate, endDate }) => {
+    try {
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      // Default to current month if no date range provided
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      const currentMonthStart = firstDayOfMonth.toISOString().split('T')[0];
+
+      const queryStartDate = startDate || currentMonthStart;
+      const queryEndDate = endDate || currentDate;
+
+      // New Leads
+      const { data: newLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .gte('created_at', `${queryStartDate}T00:00:00`)
+        .lte('created_at', `${queryEndDate}T23:59:59`);
+
+      // Active Leads
+      const { data: activeLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_active_status', true);
+
+      // Closed Leads
+      const { data: closedLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .gte('closed_at', `${queryStartDate}T00:00:00`)
+        .lte('closed_at', `${queryEndDate}T23:59:59`);
+
+      // Sales Leads
+      const { data: salesLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .gte('won_at', `${queryStartDate}T00:00:00`)
+        .lte('won_at', `${queryEndDate}T23:59:59`);
+
+      // Not Potential Leads
+      const { data: nonPotentialLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_stage', 6)
+        .gte('created_at', `${queryStartDate}T00:00:00`)
+        .lte('created_at', `${queryEndDate}T23:59:59`);
+
+      // Hot Leads
+      const { data: hotLeads } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_stage', 4)
+        .eq('lead_active_status', true);
+
+      // Followup Required Leads
+      const { data: followupRequired } = await supabase
+        .from('leads')
+        .select('count')
+        .eq('assigned_user', userId)
+        .eq('lead_active_status', true)
+        .lt('fu_date', currentDate);
+
+      return {
+        newLeads: newLeads?.[0]?.count || 0,
+        activeLeads: activeLeads?.[0]?.count || 0,
+        closedLeads: closedLeads?.[0]?.count || 0,
+        salesLeads: salesLeads?.[0]?.count || 0,
+        nonPotentialLeads: nonPotentialLeads?.[0]?.count || 0,
+        hotLeads: hotLeads?.[0]?.count || 0,
+        followupRequired: followupRequired?.[0]?.count || 0
+      };
+    } catch (error) {
+      console.error('Error in getUserReportStats:', error);
+      throw error;
+    }
   }
 };
 

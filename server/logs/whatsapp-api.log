@@ -555,3 +555,21 @@
 {"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-17T19:29:01.714Z"}
 {"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-17T19:29:01.823Z"}
 {"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-17T19:29:02.150Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:28:46.599Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:28:51.663Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-18T23:28:51.663Z","type":"text"}
+{"content":"hello","level":"info","message":"📝 Received text message","timestamp":"2025-01-18T23:28:52.542Z"}
+{"hasMedia":false,"leadId":9,"level":"info","message":"�� Storing message in database","timestamp":"2025-01-18T23:28:52.543Z","type":"text"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:29:16.695Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:29:19.509Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:29:22.516Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:29:47.908Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-18T23:29:47.909Z","type":"document"}
+{"filename":"1-1.pdf","level":"info","mediaId":"990436666235435","message":"📎 Received document","timestamp":"2025-01-18T23:29:48.667Z"}
+{"level":"info","mediaId":"990436666235435","message":"🔍 Fetching media URL","timestamp":"2025-01-18T23:29:48.670Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-18T23:29:49.326Z"}
+{"level":"info","message":"📥 Received webhook payload","object":"whatsapp_business_account","timestamp":"2025-01-18T23:40:58.811Z"}
+{"from":"923254122821","level":"info","message":"📥 Processing message","timestamp":"2025-01-18T23:40:58.813Z","type":"document"}
+{"filename":"001000000000087075_001_240921440_C02_117_1.pdf","level":"info","mediaId":"477592035111667","message":"📎 Received document","timestamp":"2025-01-18T23:40:59.592Z"}
+{"level":"info","mediaId":"477592035111667","message":"🔍 Fetching media URL","timestamp":"2025-01-18T23:40:59.593Z"}
+{"level":"info","message":"✅ Media URL fetched successfully","timestamp":"2025-01-18T23:41:00.152Z"}
