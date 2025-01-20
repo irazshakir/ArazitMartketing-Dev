@@ -133,3 +133,30 @@ h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-d
   background-color: #aa2478 !important;
   border-color: #aa2478 !important;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* Update the transition properties */
+.ant-layout {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Remove the previous sidebar-specific margin rule since we're handling it in App.jsx */
+.ant-layout-sider-collapsed + .ant-layout {
+  margin-left: 80px;
+}
+
+/* Ensure content area is properly aligned */
+.ant-layout-content {
+  overflow-y: auto;
+  height: 100vh;
+  width: 100%;
+}
