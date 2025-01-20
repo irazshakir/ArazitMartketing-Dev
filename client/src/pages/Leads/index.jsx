@@ -12,7 +12,9 @@ import {
   Select,
   Switch,
   message,
-  Layout 
+  Layout,
+  Tag,
+  Drawer
 } from 'antd';
 import { 
   FilterOutlined, 
@@ -26,6 +28,7 @@ import axios from 'axios';
 import TableSkeleton from '../../components/TableSkeleton';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash/debounce';
+import moment from 'moment';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -36,6 +39,20 @@ axios.defaults.baseURL = 'http://localhost:5000'; // Your backend URL
 const debouncedFetchLeads = debounce(async (value, callback) => {
   callback(value);
 }, 500);
+
+const getStageColor = (stageName) => {
+  const stageColors = {
+    'New Lead': 'blue',
+    'Hot Lead': 'volcano',
+    'Cold Lead': 'default',
+    'Warm Lead': 'orange',
+    'Won': 'success',
+    'Lost': 'error',
+    'Follow Up': 'processing',
+    'Proposal Sent': 'warning'
+  };
+  return stageColors[stageName] || 'default';
+};
 
 const Leads = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -53,6 +70,15 @@ const Leads = () => {
   const [leads, setLeads] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [branches, setBranches] = useState([]);
+
+  // Add these state variables
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    lead_product: null,
+    lead_stage: null,
+    assigned_user: null,
+    lead_active_status: null
+  });
 
   // Fetch dropdown data
   useEffect(() => {
@@ -80,11 +106,11 @@ const Leads = () => {
   }, []);
 
   // Fetch leads
-  const fetchLeads = async (searchValue = '') => {
-    setLoading(true);
+  const fetchLeads = async () => {
     try {
-      const response = await axios.get(`/api/leads${searchValue ? `?search=${searchValue}` : ''}`);
-      setLeads(response.data);
+      setLoading(true);
+      const response = await axios.get('/api/leads');
+      setLeads(sortLeads(response.data)); // Apply sorting here
     } catch (error) {
       message.error('Failed to fetch leads');
     } finally {
@@ -159,13 +185,28 @@ const Leads = () => {
     }
   };
 
+  // Add this sorting helper function
+  const sortLeads = (leads) => {
+    return leads.sort((a, b) => {
+      // First, sort by active status
+      if (a.lead_active_status !== b.lead_active_status) {
+        return a.lead_active_status ? -1 : 1;
+      }
+
+      // For leads with same active status, sort by followup date
+      const dateA = new Date(a.fu_date);
+      const dateB = new Date(b.fu_date);
+      return dateA - dateB;
+    });
+  };
+
   const handleSearch = (value) => {
     setSearchQuery(value);
     debouncedFetchLeads(value, async (searchTerm) => {
       try {
         setLoading(true);
         const response = await axios.get(`/api/leads${searchTerm ? `?search=${searchTerm}` : ''}`);
-        setLeads(response.data);
+        setLeads(sortLeads(response.data)); // Apply sorting here
       } catch (error) {
         message.error('Failed to fetch leads');
       } finally {
@@ -174,11 +215,60 @@ const Leads = () => {
     });
   };
 
+  // Add this function to handle filter changes
+  const handleFilterChange = async () => {
+    setLoading(true);
+    try {
+      let query = '/api/leads?';
+      
+      // Build query string from filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== null) {
+          query += `${key}=${value}&`;
+        }
+      });
+
+      const response = await axios.get(query.slice(0, -1)); // Remove last &
+      setLeads(sortLeads(response.data)); // Apply sorting here
+    } catch (error) {
+      message.error('Failed to apply filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add this function to reset filters
+  const resetFilters = () => {
+    setFilters({
+      lead_product: null,
+      lead_stage: null,
+      assigned_user: null,
+      lead_active_status: null
+    });
+    fetchLeads(); // Fetch all leads without filters
+  };
+
   const columns = [
     {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
+      render: (text, record) => {
+        const followupDate = record.fu_date ? new Date(record.fu_date) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        return (
+          <Space>
+            {text}
+            {followupDate && followupDate < today && record.lead_active_status && (
+              <Tag color="error" style={{ marginLeft: 8 }}>
+                Alert !
+              </Tag>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Phone',
@@ -194,6 +284,11 @@ const Leads = () => {
       title: 'Stage',
       dataIndex: ['stages', 'stage_name'],
       key: 'stage',
+      render: (text) => (
+        <Tag color={getStageColor(text)}>
+          {text}
+        </Tag>
+      ),
     },
     {
       title: 'Assigned To',
@@ -217,7 +312,7 @@ const Leads = () => {
       title: 'Followup Date',
       dataIndex: 'fu_date',
       key: 'followup',
-      render: (text) => text ? new Date(text).toLocaleDateString() : '-',
+      render: (text) => text ? moment(text).format('D MMM YY') : '-',
     },
     {
       title: 'Actions',
@@ -292,7 +387,12 @@ const Leads = () => {
             />
           </div>
           <div style={actionButtonStyle}>
-            <Button icon={<FilterOutlined />}>Filter</Button>
+            <Button 
+              icon={<FilterOutlined />} 
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              Filter
+            </Button>
             <Button icon={<ExportOutlined />}>Export</Button>
             <Button icon={<ImportOutlined />}>Import</Button>
             <Button 
@@ -499,6 +599,97 @@ const Leads = () => {
             </Form.Item>
           </Form>
         </Modal>
+
+        {/* Filter Drawer */}
+        <Drawer
+          title="Filter Leads"
+          placement="right"
+          onClose={() => setIsFilterDrawerOpen(false)}
+          open={isFilterDrawerOpen}
+          width={400}
+          extra={
+            <Space>
+              <Button onClick={resetFilters}>Reset</Button>
+              <Button 
+                type="primary" 
+                onClick={() => {
+                  handleFilterChange();
+                  setIsFilterDrawerOpen(false);
+                }}
+                style={{ background: theme.colors.primary }}
+              >
+                Apply
+              </Button>
+            </Space>
+          }
+        >
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <div>
+              <Typography.Text strong>Product</Typography.Text>
+              <Select
+                style={{ width: '100%', marginTop: 8 }}
+                placeholder="Select Product"
+                allowClear
+                value={filters.lead_product}
+                onChange={(value) => setFilters({ ...filters, lead_product: value })}
+              >
+                {products.map(product => (
+                  <Select.Option key={product.id} value={product.id}>
+                    {product.product_name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <Typography.Text strong>Stage</Typography.Text>
+              <Select
+                style={{ width: '100%', marginTop: 8 }}
+                placeholder="Select Stage"
+                allowClear
+                value={filters.lead_stage}
+                onChange={(value) => setFilters({ ...filters, lead_stage: value })}
+              >
+                {stages.map(stage => (
+                  <Select.Option key={stage.id} value={stage.id}>
+                    {stage.stage_name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <Typography.Text strong>Assigned User</Typography.Text>
+              <Select
+                style={{ width: '100%', marginTop: 8 }}
+                placeholder="Select User"
+                allowClear
+                value={filters.assigned_user}
+                onChange={(value) => setFilters({ ...filters, assigned_user: value })}
+              >
+                {users.map(user => (
+                  <Select.Option key={user.id} value={user.id}>
+                    {user.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <Typography.Text strong>Status</Typography.Text>
+              <Select
+                style={{ width: '100%', marginTop: 8 }}
+                placeholder="Select Status"
+                allowClear
+                value={filters.lead_active_status}
+                onChange={(value) => setFilters({ ...filters, lead_active_status: value })}
+              >
+                <Select.Option value={true}>Active</Select.Option>
+                <Select.Option value={false}>Inactive</Select.Option>
+              </Select>
+            </div>
+          </Space>
+        </Drawer>
       </div>
     </Layout>
   );

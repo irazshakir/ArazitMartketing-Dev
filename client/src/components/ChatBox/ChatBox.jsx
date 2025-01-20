@@ -96,7 +96,7 @@ const ChatBox = ({
     fetchUsers();
   }, []);
 
-  // Add this new effect to fetch notes
+  // Update the fetchNotes function in useEffect
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -108,11 +108,11 @@ const ChatBox = ({
 
           console.log('ChatBox - Fetch Notes:', {
             leadId: id,
-            userData,
             userRole,
-            token: token ? 'Token exists' : 'No token'
+            hasToken: !!token
           });
 
+          // Determine the endpoint based on user role
           const endpoint = userRole === 'admin' ? 
             `/api/leads/${id}/notes` : 
             `/api/user-leads/${id}/notes`;
@@ -123,18 +123,21 @@ const ChatBox = ({
               'Content-Type': 'application/json'
             }
           });
-          
+
           console.log('ChatBox - Notes Response:', response.data);
 
-          // Check if response has the expected structure
-          if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          // Check for the new response format
+          if (response.data && Array.isArray(response.data.data)) {
             const formattedNotes = response.data.data.map(note => ({
-              ...note,
+              id: note.id,
+              note: note.note,
+              created_at: note.created_at,
+              users: note.users || { name: 'Unknown' },
               timestamp: postgresTimestampToUnix(note.created_at)
             }));
             setNotes(formattedNotes);
           } else {
-            console.error('ChatBox - Unexpected response format:', response.data);
+            console.error('ChatBox - Invalid response format:', response.data);
             throw new Error('Invalid response format');
           }
         }
