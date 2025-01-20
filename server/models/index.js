@@ -113,7 +113,31 @@ export const LeadModel = {
       
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+
+      // Additional processing to sort leads
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return data.sort((a, b) => {
+        // First, sort by active status
+        if (a.lead_active_status !== b.lead_active_status) {
+          return a.lead_active_status ? -1 : 1;
+        }
+
+        // For leads with same active status, sort by followup date
+        const dateA = new Date(a.fu_date);
+        const dateB = new Date(b.fu_date);
+
+        // Simple ascending date sort for all dates
+        return dateA - dateB;
+
+        // Then sort by time if dates are equal
+        if (dateA.getTime() === dateB.getTime()) {
+          const timeA = (a.fu_hour * 60) + a.fu_minutes + (a.fu_period === 'PM' ? 720 : 0);
+          const timeB = (b.fu_hour * 60) + b.fu_minutes + (b.fu_period === 'PM' ? 720 : 0);
+          return timeA - timeB;
+        }
+      });
     } catch (error) {
       throw error;
     }
@@ -121,10 +145,20 @@ export const LeadModel = {
 
   create: async (values) => {
     try {
+      const now = new Date().toISOString();
+      const dataToInsert = {
+        ...values,
+        // Add closed_at if lead is inactive
+        ...(values.lead_active_status === false && { closed_at: now }),
+        // Add won_at if lead stage is 4 (Won)
+        ...(values.lead_stage === 4 && { won_at: now })
+      };
+
       const { data, error } = await supabase
         .from('leads')
-        .insert([values])
+        .insert([dataToInsert])
         .select();
+
       if (error) throw error;
       return data[0];
     } catch (error) {
@@ -154,24 +188,39 @@ export const LeadModel = {
 
   update: async (id, data) => {
     try {
+      const now = new Date().toISOString();
+      const updatedData = {
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        lead_product: data.lead_product,
+        lead_stage: data.lead_stage,
+        lead_source_id: data.lead_source_id,
+        branch_id: data.branch_id,
+        fu_date: data.fu_date,
+        fu_hour: data.fu_hour,
+        fu_minutes: data.fu_minutes,
+        fu_period: data.fu_period,
+        lead_active_status: data.lead_active_status,
+        assigned_user: data.assigned_user,
+        updated_at: now
+      };
+
+      // Handle closed_at based on lead_active_status
+      if (data.lead_active_status === false) {
+        updatedData.closed_at = now;
+      } else if (data.lead_active_status === true) {
+        updatedData.closed_at = null;  // Reset closed_at when lead is reactivated
+      }
+
+      // Add won_at if lead stage is being set to 4 (Won)
+      if (data.lead_stage === 4) {
+        updatedData.won_at = now;
+      }
+
       const { data: updatedLead, error } = await supabase
         .from('leads')
-        .update({
-          name: data.name,
-          phone: data.phone,
-          email: data.email,
-          lead_product: data.lead_product,
-          lead_stage: data.lead_stage,
-          lead_source_id: data.lead_source_id,
-          branch_id: data.branch_id,
-          fu_date: data.fu_date,
-          fu_hour: data.fu_hour,
-          fu_minutes: data.fu_minutes,
-          fu_period: data.fu_period,
-          lead_active_status: data.lead_active_status,
-          assigned_user: data.assigned_user,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatedData)
         .eq('id', id)
         .select()
         .single();
@@ -238,14 +287,31 @@ export const LeadModel = {
         .from('lead_notes')
         .select(`
           *,
-          users (name)
+          users (
+            id,
+            name
+          )
         `)
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
+
       if (error) throw error;
-      return data;
+
+      // Return in the expected format
+      return {
+        success: true,
+        data: data.map(note => ({
+          ...note,
+          created_at: note.created_at,
+          users: note.users // This will contain the user details
+        }))
+      };
     } catch (error) {
-      throw error;
+      console.error('LeadModel.findNotes error:', error);
+      throw {
+        success: false,
+        error: error.message
+      };
     }
   },
 
@@ -256,12 +322,25 @@ export const LeadModel = {
         .insert([noteData])
         .select(`
           *,
-          users (name)
+          users (
+            id,
+            name
+          )
         `);
+
       if (error) throw error;
-      return data[0];
+
+      // Return in the expected format
+      return {
+        success: true,
+        data: data[0]
+      };
     } catch (error) {
-      throw error;
+      console.error('LeadModel.createNote error:', error);
+      throw {
+        success: false,
+        error: error.message
+      };
     }
   }
 };

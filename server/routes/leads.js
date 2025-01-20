@@ -1,5 +1,6 @@
 import express from 'express';
 import { LeadModel, ProductModel, StageModel, LeadSourceModel, UserModel, BranchModel } from '../models/index.js';
+import { supabase } from '../config/database.js';
 
 
 const router = express.Router();
@@ -7,17 +8,40 @@ const router = express.Router();
 // Get all leads
 router.get('/leads', async (req, res) => {
   try {
-    const { search } = req.query;
-    const leads = await LeadModel.findAll({
-      search: search,
-      include: [
-        { model: ProductModel, attributes: ['product_name'] },
-        { model: StageModel, attributes: ['stage_name'] },
-        { model: LeadSourceModel, attributes: ['lead_source_name'] },
-        { model: UserModel, attributes: ['name'] }
-      ]
-    });
-    res.json(leads);
+    const { search, lead_product, lead_stage, assigned_user, lead_active_status } = req.query;
+    
+    let query = supabase
+      .from('leads')
+      .select(`
+        *,
+        products!lead_product(product_name),
+        stages!lead_stage(stage_name),
+        lead_sources!lead_source_id(lead_source_name),
+        users!assigned_user(name),
+        company_branches!leads_branch_id_fkey(branch_name)
+      `);
+
+    // Apply filters if they exist
+    if (lead_product) {
+      query = query.eq('lead_product', lead_product);
+    }
+    if (lead_stage) {
+      query = query.eq('lead_stage', lead_stage);
+    }
+    if (assigned_user) {
+      query = query.eq('assigned_user', assigned_user);
+    }
+    if (lead_active_status !== null && lead_active_status !== undefined) {
+      query = query.eq('lead_active_status', lead_active_status === 'true');
+    }
+    if (search && search.trim()) {
+      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching leads', error });
   }
@@ -156,34 +180,66 @@ router.get('/leads/:id', async (req, res) => {
 // GET lead notes
 router.get('/leads/:id/notes', async (req, res) => {
   try {
-    const notes = await LeadModel.findNotes(req.params.id, {
-      include: [
-        { model: UserModel, attributes: ['name'] }
-      ],
-      order: [['created_at', 'DESC']]
+    const { data, error } = await supabase
+      .from('lead_notes')
+      .select(`
+        *,
+        users!note_added_by (
+          id,
+          name
+        )
+      `)
+      .eq('lead_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: data || [] // Ensure we always return an array
     });
-    
-    if (!notes) {
-      return res.status(404).json({ message: 'Notes not found' });
-    }
-    
-    res.json(notes);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching notes', error });
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching notes',
+      details: error.message 
+    });
   }
 });
 
 // POST new note
 router.post('/leads/:id/notes', async (req, res) => {
   try {
-    const note = await LeadModel.createNote({
-      lead_id: req.params.id,
-      note: req.body.note,
-      note_added_by: req.body.note_added_by
+    const { data, error } = await supabase
+      .from('lead_notes')
+      .insert([{
+        lead_id: req.params.id,
+        note: req.body.note,
+        note_added_by: req.body.note_added_by
+      }])
+      .select(`
+        *,
+        users!note_added_by (
+          id,
+          name
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+      success: true,
+      data
     });
-    res.status(201).json(note);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating note', error });
+    console.error('Error creating note:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error creating note',
+      details: error.message 
+    });
   }
 });
 
