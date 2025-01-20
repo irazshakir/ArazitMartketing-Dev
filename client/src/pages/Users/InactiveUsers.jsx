@@ -14,12 +14,21 @@ const InactiveUsers = () => {
   const [totalInactiveUsers, setTotalInactiveUsers] = useState(0);
   const [inactiveUserCount, setInactiveUserCount] = useState(0);
 
+  useEffect(() => {
+    fetchInactiveUsers();
+  }, []);
+
   const fetchInactiveUsers = async (search = '') => {
     setLoading(true);
     try {
       let query = supabase
         .from('users')
-        .select('*, roles (role_name)', { count: 'exact' })
+        .select(`
+          *,
+          roles (
+            role_name
+          )
+        `, { count: 'exact' })
         .eq('user_is_active', false);
 
       if (search) {
@@ -29,9 +38,16 @@ const InactiveUsers = () => {
       const { data, error, count } = await query;
 
       if (error) throw error;
-      setInactiveUsers(data);
-      setTotalInactiveUsers(count);
-      setInactiveUserCount(count);
+      
+      const formattedData = data.map(user => ({
+        ...user,
+        key: user.id,
+        role: user.roles?.role_name
+      }));
+
+      setInactiveUsers(formattedData);
+      setTotalInactiveUsers(count || 0);
+      setInactiveUserCount(count || 0);
     } catch (error) {
       message.error('Error fetching inactive users: ' + error.message);
     } finally {
@@ -83,9 +99,8 @@ const InactiveUsers = () => {
     },
     {
       title: 'ROLE',
-      dataIndex: 'roles',
+      dataIndex: 'role',
       key: 'role',
-      render: (roles) => roles?.role_name
     },
     {
       title: 'STATUS',
@@ -186,6 +201,7 @@ const InactiveUsers = () => {
         totalItems={totalInactiveUsers}
         onSearch={fetchInactiveUsers}
         searchPlaceholder="Search inactive users..."
+        rowKey="id"
       />
     </div>
   );
