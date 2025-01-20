@@ -79,6 +79,10 @@ h5:where(.css-dev-only-do-not-override-161f05s).ant-typography, div:where(.css-d
   border-color: rgba(170, 36, 120, 0.2) !important;
 }
 
+:where(.css-dev-only-do-not-override-161f05s).ant-menu-light .ant-menu-submenu-selected >.ant-menu-submenu-title, :where(.css-dev-only-do-not-override-161f05s).ant-menu-light>.ant-menu .ant-menu-submenu-selected >.ant-menu-submenu-title {
+  color: var(--color-primary);
+}
+
 .report-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border-radius: 8px;
