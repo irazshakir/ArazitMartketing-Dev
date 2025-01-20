@@ -1,33 +1,43 @@
+import { useState, useEffect } from 'react';
 import { Dropdown } from 'antd';
-import { MoreOutlined } from '@ant-design/icons';
 import UserProfileDropdown from './UserProfileDropdown';
-import theme from '../../theme';
 
 const UserProfile = ({ collapsed }) => {
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setUserData(JSON.parse(userStr));
+    }
+  }, []);
+
   return (
     <Dropdown 
-      overlay={<UserProfileDropdown />} 
+      dropdownRender={() => <UserProfileDropdown />}
       trigger={['click']}
       placement="topRight"
+      arrow={false}
+      overlayStyle={{ 
+        position: 'fixed',
+        zIndex: 1050,
+        right: collapsed ? '80px' : '250px',
+        bottom: '60px'
+      }}
     >
-      <div className="p-4 border-t border-gray-100 cursor-pointer hover:bg-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-            <span className="text-sm font-medium text-pink-600">I</span>
-          </div>
-          {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium truncate">Inzmam</h4>
-                <p className="text-xs text-gray-500 truncate">Admin</p>
-              </div>
-              <MoreOutlined 
-                className="text-lg" 
-                style={{ color: theme.colors.primary }}
-              />
-            </>
-          )}
+      <div className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50">
+        <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+          <span className="text-sm font-medium text-pink-600">
+            {userData?.name?.charAt(0) || 'U'}
+          </span>
         </div>
+        {!collapsed && (
+          <div className="flex-grow">
+            <div className="text-sm font-medium">{userData?.name || 'User'}</div>
+            <div className="text-xs text-gray-500">{userData?.roles?.role_name || 'Role'}</div>
+          </div>
+        )}
       </div>
     </Dropdown>
   );

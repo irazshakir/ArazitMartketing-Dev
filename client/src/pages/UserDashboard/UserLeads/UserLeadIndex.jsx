@@ -9,7 +9,10 @@ import {
   Input,
   message,
   Layout,
-  Tag 
+  Tag,
+  Drawer,
+  Select,
+  DatePicker
 } from 'antd';
 import { 
   FilterOutlined, 
@@ -35,6 +38,17 @@ const UserLeadIndex = () => {
   const [leads, setLeads] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    lead_product: null,
+    lead_stage: null,
+    lead_active_status: null,
+    lead_source_id: null,
+    fu_date: null
+  });
+  const [products, setProducts] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [leadSources, setLeadSources] = useState([]);
 
   // Define table columns
   const columns = [
@@ -42,6 +56,22 @@ const UserLeadIndex = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
+      render: (text, record) => {
+        const followupDate = record.fu_date ? new Date(record.fu_date) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        return (
+          <Space>
+            {text}
+            {followupDate && followupDate < today && record.lead_active_status && (
+              <Tag color="error" style={{ marginLeft: 8 }}>
+                Alert !
+              </Tag>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Phone',
@@ -179,6 +209,69 @@ const UserLeadIndex = () => {
     gap: '8px',
   };
 
+  // Add useEffect to fetch filter options
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const [productsRes, stagesRes, sourcesRes] = await Promise.all([
+          axios.get('/api/products'),
+          axios.get('/api/stages'),
+          axios.get('/api/lead-sources')
+        ]);
+
+        setProducts(productsRes.data || []);
+        setStages(stagesRes.data || []);
+        setLeadSources(sourcesRes.data || []);
+      } catch (error) {
+        message.error('Failed to fetch filter options');
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
+
+  // Add filter handling functions
+  const handleFilterChange = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('user_jwt');
+      const queryParams = new URLSearchParams();
+      
+      // Add all non-null filters to query params
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== null) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await axios.get(`/api/user-leads?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        setLeads(response.data.data || []);
+      }
+    } catch (error) {
+      message.error('Failed to apply filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      lead_product: null,
+      lead_stage: null,
+      lead_active_status: null,
+      lead_source_id: null,
+      fu_date: null
+    });
+    fetchUserLeads();
+  };
+
   return (
     <Layout style={{ margin: 0, padding: 0 }}>
       <div style={{ 
@@ -201,12 +294,11 @@ const UserLeadIndex = () => {
             />
           </div>
           <div style={actionButtonStyle}>
-            <Button icon={<FilterOutlined />}>Filter</Button>
             <Button 
-              icon={<ExportOutlined />}
-              style={{ background: theme.colors.primary, color: '#fff' }}
+              icon={<FilterOutlined />} 
+              onClick={() => setIsFilterDrawerOpen(true)}
             >
-              Export
+              Filter
             </Button>
           </div>
         </div>
@@ -234,6 +326,106 @@ const UserLeadIndex = () => {
           )}
         </div>
       </div>
+
+      {/* Add Filter Drawer */}
+      <Drawer
+        title="Filter Leads"
+        placement="right"
+        onClose={() => setIsFilterDrawerOpen(false)}
+        open={isFilterDrawerOpen}
+        width={400}
+        extra={
+          <Space>
+            <Button onClick={resetFilters}>Reset</Button>
+            <Button 
+              type="primary" 
+              onClick={() => {
+                handleFilterChange();
+                setIsFilterDrawerOpen(false);
+              }}
+              style={{ background: theme.colors.primary }}
+            >
+              Apply
+            </Button>
+          </Space>
+        }
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <div>
+            <Typography.Text strong>Product</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Product"
+              allowClear
+              value={filters.lead_product}
+              onChange={(value) => setFilters({ ...filters, lead_product: value })}
+            >
+              {products.map(product => (
+                <Select.Option key={product.id} value={product.id}>
+                  {product.product_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Stage</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Stage"
+              allowClear
+              value={filters.lead_stage}
+              onChange={(value) => setFilters({ ...filters, lead_stage: value })}
+            >
+              {stages.map(stage => (
+                <Select.Option key={stage.id} value={stage.id}>
+                  {stage.stage_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Status</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Status"
+              allowClear
+              value={filters.lead_active_status}
+              onChange={(value) => setFilters({ ...filters, lead_active_status: value })}
+            >
+              <Select.Option value={true}>Active</Select.Option>
+              <Select.Option value={false}>Inactive</Select.Option>
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Lead Source</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Lead Source"
+              allowClear
+              value={filters.lead_source_id}
+              onChange={(value) => setFilters({ ...filters, lead_source_id: value })}
+            >
+              {leadSources.map(source => (
+                <Select.Option key={source.id} value={source.id}>
+                  {source.lead_source_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Followup Date</Typography.Text>
+            <DatePicker
+              style={{ width: '100%', marginTop: 8 }}
+              onChange={(date) => setFilters({ ...filters, fu_date: date ? date.format('YYYY-MM-DD') : null })}
+              allowClear
+            />
+          </div>
+        </Space>
+      </Drawer>
     </Layout>
   );
 };

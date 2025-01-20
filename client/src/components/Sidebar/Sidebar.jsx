@@ -37,7 +37,6 @@ const Sidebar = ({ collapsed, onCollapse }) => {
 
   const getUserRole = async () => {
     try {
-      // Get user data from localStorage instead of making a new Supabase query
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const userData = JSON.parse(userStr);
@@ -49,9 +48,8 @@ const Sidebar = ({ collapsed, onCollapse }) => {
   };
 
   const handleToggle = () => {
-    console.log('Toggle clicked in Sidebar, current collapsed state:', collapsed);
     if (typeof onCollapse === 'function') {
-      onCollapse();
+      onCollapse(!collapsed);
     }
   };
 
@@ -191,6 +189,7 @@ const Sidebar = ({ collapsed, onCollapse }) => {
       width={250}
       collapsedWidth={80}
       collapsed={collapsed}
+      onCollapse={(value) => onCollapse(value)}
       theme="light"
       style={{
         height: '100vh',
@@ -200,7 +199,7 @@ const Sidebar = ({ collapsed, onCollapse }) => {
         bottom: 0,
         backgroundColor: '#fff',
         zIndex: 1000,
-        transition: 'all 0.2s'
+        overflow: 'hidden'
       }}
     >
       <div className="flex justify-between items-center" style={{ padding: '16px' }}>
@@ -210,10 +209,10 @@ const Sidebar = ({ collapsed, onCollapse }) => {
           onClick={handleToggle}
           className="text-gray-500 hover:text-primary rounded transition-colors"
           style={{ 
-            '--tw-text-opacity': 1, 
-            '--text-primary': theme.colors.primary,
             padding: '8px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            border: 'none',
+            background: 'none'
           }}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -264,8 +263,7 @@ const Sidebar = ({ collapsed, onCollapse }) => {
         left: 0, 
         right: 0,
         backgroundColor: '#fff',
-        borderTop: '1px solid #f0f0f0',
-        transition: 'all 0.2s'
+        borderTop: '1px solid #f0f0f0'
       }}>
         <UserProfile collapsed={collapsed} />
       </div>
@@ -274,8 +272,14 @@ const Sidebar = ({ collapsed, onCollapse }) => {
 };
 
 Sidebar.propTypes = {
-  collapsed: PropTypes.bool.isRequired,
-  onCollapse: PropTypes.func.isRequired
+  collapsed: PropTypes.bool,
+  onCollapse: PropTypes.func
+};
+
+// Add default props
+Sidebar.defaultProps = {
+  collapsed: false,
+  onCollapse: () => {}
 };
 
 export default Sidebar; 

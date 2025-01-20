@@ -94,15 +94,9 @@ const App = () => {
     }
   };
 
-  // Define the toggle function
-  const handleCollapse = () => {
-    setCollapsed(prev => !prev);
+  const handleCollapse = (value) => {
+    setCollapsed(value);
   };
-
-  // Debug effect to monitor collapsed state changes
-  useEffect(() => {
-    console.log('Collapsed state changed to:', collapsed);
-  }, [collapsed]);
 
   if (loading) {
     return (
@@ -114,7 +108,6 @@ const App = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* Only render Sidebar if not on login page and user is authenticated */}
       {!isLoginPage && isAuthenticated() && (
         <Sidebar 
           collapsed={collapsed} 
