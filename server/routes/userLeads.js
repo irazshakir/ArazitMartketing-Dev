@@ -113,6 +113,6 @@ router.post('/user-leads/:id/notes', checkAuth, UserLeadsController.addUserLeadN
 router.patch('/user-leads/:id', checkAuth, UserLeadsController.updateLead);
 router.patch('/user-leads/:id/assign', checkAuth, UserLeadsController.assignLead);
 
-
+router.get('/general-settings', UserLeadsController.getGeneralSettings);
 
 export default router; 

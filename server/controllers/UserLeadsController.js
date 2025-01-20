@@ -4,7 +4,14 @@ const UserLeadsController = {
   getUserLeads: async (req, res) => {
     try {
       const userId = req.user.id;
-      const { searchQuery } = req.query;
+      const { 
+        search,
+        lead_product,
+        lead_stage,
+        lead_active_status,
+        lead_source_id,
+        fu_date
+      } = req.query;
 
       let query = supabase
         .from('leads')
@@ -27,36 +34,91 @@ const UserLeadsController = {
             branch_name
           )
         `)
-        .eq('assigned_user', userId)
-        .order('created_at', { ascending: false });
+        .eq('assigned_user', userId);
 
-      if (searchQuery) {
-        query = query.or(`
-          name.ilike.%${searchQuery}%,
-          phone.ilike.%${searchQuery}%,
-          email.ilike.%${searchQuery}%
-        `);
+      // Apply search if it exists (searching across name, phone, and email)
+      if (search && typeof search === 'string' && search.trim()) {
+        const sanitizedSearch = search.trim().replace(/[%_]/g, '\\$&'); // Escape special characters
+        query = query.or(
+          `name.ilike.%${sanitizedSearch}%,` +
+          `phone.ilike.%${sanitizedSearch}%,` +
+          `email.ilike.%${sanitizedSearch}%`
+        );
       }
+
+      // Apply other filters if they exist
+      if (lead_product) {
+        query = query.eq('lead_product', lead_product);
+      }
+      if (lead_stage) {
+        query = query.eq('lead_stage', lead_stage);
+      }
+      if (lead_active_status !== undefined) {
+        query = query.eq('lead_active_status', lead_active_status === 'true');
+      }
+      if (lead_source_id) {
+        query = query.eq('lead_source_id', lead_source_id);
+      }
+      if (fu_date) {
+        query = query.eq('fu_date', fu_date);
+      }
+
+      console.log('UserLeadsController - Executing query with search:', { search, userId });
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('Supabase query error:', error);
+        console.error('UserLeadsController - Supabase query error:', error);
         throw error;
       }
 
-      // Ensure we always return an array and transform lead_active_status
-      const leads = Array.isArray(data) ? data.map(lead => ({
+      // Sort the leads:
+      // 1. Active leads first
+      // 2. For active leads, sort by followup date (past dates first)
+      const sortedLeads = data.sort((a, b) => {
+        // First, sort by active status
+        if (a.lead_active_status !== b.lead_active_status) {
+          return a.lead_active_status ? -1 : 1;
+        }
+
+        // For leads with same active status, sort by followup date
+        const dateA = new Date(a.fu_date || '9999-12-31');
+        const dateB = new Date(b.fu_date || '9999-12-31');
+
+        if (a.lead_active_status === true) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const aIsPast = dateA < today;
+          const bIsPast = dateB < today;
+
+          if (aIsPast !== bIsPast) {
+            return aIsPast ? -1 : 1;
+          }
+        }
+
+        return dateA - dateB;
+      });
+
+      const transformedLeads = sortedLeads.map(lead => ({
         ...lead,
-        lead_active_status: Boolean(lead.lead_active_status) // Ensure boolean value
-      })) : [];
+        lead_active_status: Boolean(lead.lead_active_status)
+      }));
+
+      console.log('UserLeadsController - Successfully fetched leads:', {
+        totalLeads: transformedLeads.length,
+        searchApplied: !!search
+      });
 
       res.json({
         success: true,
-        data: leads
+        data: transformedLeads
       });
     } catch (error) {
-      console.error('Error in getUserLeads:', error);
+      console.error('UserLeadsController - Error in getUserLeads:', {
+        error: error.message,
+        stack: error.stack
+      });
       res.status(500).json({ 
         success: false,
         error: 'Failed to fetch leads',
@@ -593,6 +655,29 @@ const UserLeadsController = {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch users',
+        details: error.message
+      });
+    }
+  },
+
+  getGeneralSettings: async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('general_settings')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error('Error in getGeneralSettings:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch general settings',
         details: error.message
       });
     }
