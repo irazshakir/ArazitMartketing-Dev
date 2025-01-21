@@ -21,42 +21,77 @@ import Logo from './Logo';
 import { useState, useEffect } from 'react';
 import theme from '../../theme';
 import UserProfile from './UserProfile';
-import { NavLink, useLocation } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { authService } from '../../services/authService';
 import PropTypes from 'prop-types';
 
 const { Sider } = Layout;
 
-const Sidebar = ({ collapsed, onCollapse }) => {
+const Sidebar = () => {
   const [userRole, setUserRole] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getUserRole();
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
 
-  useEffect(() => {
-    if (!collapsed) {
-      onCollapse(true);
-    }
-  }, []);
-
-  const getUserRole = async () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        setUserRole(userData.roles.role_name);
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser && currentUser.userData.roles.role_name) {
+          setUserRole(currentUser.userData.roles.role_name);
+        } else {
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        navigate('/login');
       }
-    } catch (error) {
-      console.error('Error getting user role:', error);
-    }
-  };
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  if (!userRole) {
+    return null;
+  }
 
   const handleToggle = () => {
     if (typeof onCollapse === 'function') {
       onCollapse(!collapsed);
     }
+  };
+
+  // Helper function to create menu items with NavLink
+  const createMenuItem = (item) => {
+    if (item.children) {
+      return {
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+        children: item.children.map(child => createMenuItem(child))
+      };
+    }
+
+    return {
+      key: item.key,
+      icon: item.icon,
+      label: (
+        <NavLink 
+          to={item.path}
+          style={({ isActive }) => ({
+            color: isActive ? theme.colors.primary : 'inherit',
+            textDecoration: 'none'
+          })}
+        >
+          {item.label}
+        </NavLink>
+      )
+    };
   };
 
   const adminMenuItems = [
@@ -177,25 +212,31 @@ const Sidebar = ({ collapsed, onCollapse }) => {
   ];
 
   const getMenuItems = () => {
-    switch (userRole) {
-      case 'admin':
-        return adminMenuItems;
-      case 'manager':
-        // Add manager menu items when needed
-        return [];
-      case 'user':
-        return userMenuItems;
-      default:
-        return [];
+    const items = {
+      admin: adminMenuItems,
+      manager: [], // Add manager menu items when needed
+      user: userMenuItems
+    }[userRole] || [];
+
+    return items.map(item => createMenuItem(item));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_jwt');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
   return (
     <Sider
-      width={250}
+      width={80}
       collapsedWidth={80}
-      collapsed={collapsed}
-      onCollapse={(value) => onCollapse(value)}
+      collapsed={true}
       theme="light"
       style={{
         height: '100vh',
@@ -205,77 +246,40 @@ const Sidebar = ({ collapsed, onCollapse }) => {
         bottom: 0,
         backgroundColor: '#fff',
         zIndex: 1000,
-        margin: 0,
-        padding: 0,
         borderRight: '1px solid #f0f0f0'
       }}
     >
       <div style={{ 
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: '8px',
         height: '56px'
       }}>
-        <Logo collapsed={collapsed} />
-        <button
-          type="button"
-          onClick={handleToggle}
-          style={{ 
-            padding: '4px',
-            cursor: 'pointer',
-            border: 'none',
-            background: 'none',
-            marginLeft: 'auto'
-          }}
-        >
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </button>
+        <Logo collapsed={true} />
       </div>
-      
+
       <div style={{ 
         height: 'calc(100vh - 112px)',
-        overflowY: 'auto',
-        margin: 0,
-        padding: 0
+        overflowY: 'auto'
       }}>
         <Menu
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={['analytics', 'settings']}
           style={{ border: 'none' }}
-          items={getMenuItems().map(item => ({
-            ...item,
-            label: item.path ? (
-              <NavLink 
-                to={item.path}
-                className={({ isActive }) => isActive ? 'text-primary' : ''}
-              >
-                {item.label}
-              </NavLink>
-            ) : item.label,
-            ...(item.children && {
-              children: item.children.map(child => ({
-                ...child,
-                label: child.path ? (
-                  <NavLink 
-                    to={child.path}
-                    className={({ isActive }) => isActive ? 'text-primary' : ''}
-                  >
-                    {child.label}
-                  </NavLink>
-                ) : child.label
-              }))
-            })
-          }))}
+          items={getMenuItems()}
         />
       </div>
 
       <div style={{ 
         height: '56px',
-        borderTop: '1px solid #f0f0f0',
-        margin: 0,
-        padding: 0
+        borderTop: '1px solid #f0f0f0'
       }}>
-        <UserProfile collapsed={collapsed} />
+        <UserProfile 
+          collapsed={true}
+          onLogout={handleLogout}
+        />
       </div>
     </Sider>
   );

@@ -34,12 +34,12 @@ import UserLeadEdit from './pages/UserDashboard/UserLeads/UserLeadEdit';
 import CannedMessages from './pages/CannedMessages/CannedMessages';
 import TemplateMessages from './pages/TemplateMessages/TemplateMessages';
 import Sidebar from './components/Sidebar/Sidebar';
+import MainLayout from './layouts/MainLayout';
 
 const App = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
-  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   // Function to check if we're on the login page
@@ -94,10 +94,6 @@ const App = () => {
     }
   };
 
-  const handleCollapse = (value) => {
-    setCollapsed(value);
-  };
-
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
@@ -107,112 +103,51 @@ const App = () => {
   }
 
   return (
-    <Layout>
-      <Sidebar collapsed={collapsed} onCollapse={setCollapsed} />
-      <Layout style={{ 
-        marginLeft: collapsed ? '80px' : '250px',
-        transition: 'margin-left 0.2s',
-        padding: 0,
-        margin: 0
-      }}>
-        <Layout.Content style={{ 
-          padding: 0,
-          margin: 0,
-          minHeight: '100vh',
-          backgroundColor: '#fff'
-        }}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            {/* Admin Routes */}
-            <Route 
-              path="/admin" 
-              element={
-                <RouteGuard>
-                  <ProtectedRoute allowedRoles={['admin']} session={session} userRole={userRole}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                </RouteGuard>
-              }
-            >
-              <Route path="dashboard" element={<AdminDashboardContent />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="leads/:id" element={<LeadEdit />} />
-              <Route path="conversations" element={<Conversations />} />
-              
-              {/* Add the invoices route here */}
-              <Route path="invoices" element={<Invoices />} />
-              
-              {/* Settings routes */}
-              <Route path="settings">
-                <Route path="general" element={<GeneralSettings />} />
-                <Route path="products" element={<Products />} />
-                <Route path="stages" element={<Stages />} />
-                <Route path="lead-sources" element={<LeadSources />} />
-                <Route path="company-branches" element={<CompanyBranches />} />
-                <Route path="canned-messages" element={<CannedMessages />} />
-                <Route path="template-messages" element={<TemplateMessages />} />
-              </Route>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      
+      {/* Protected Admin Routes */}
+      <Route path="/admin" element={<MainLayout />}>
+        <Route path="dashboard" element={<AdminDashboardContent />} />
+        <Route path="conversations" element={<Conversations />} />
+        <Route path="leads" element={<Leads />} />
+        <Route path="leads/:id" element={<LeadEdit />} />
+        <Route path="invoices" element={<Invoices />} />
+        <Route path="settings">
+          <Route path="general" element={<GeneralSettings />} />
+          <Route path="products" element={<Products />} />
+          <Route path="stages" element={<Stages />} />
+          <Route path="lead-sources" element={<LeadSources />} />
+          <Route path="company-branches" element={<CompanyBranches />} />
+          <Route path="canned-messages" element={<CannedMessages />} />
+          <Route path="template-messages" element={<TemplateMessages />} />
+        </Route>
+        <Route path="users">
+          <Route index element={<Users />} />
+          <Route path="invites" element={<UserInvites />} />
+          <Route path="inactive" element={<InactiveUsers />} />
+          <Route path="teams" element={<Teams />} />
+          <Route path="roles" element={<Roles />} />
+        </Route>
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="reports" element={<Reports />} />
+      </Route>
 
-              {/* User Management Routes */}
-              <Route path="users">
-                <Route index element={<Users />} />
-                <Route path="invites" element={<UserInvites />} />
-                <Route path="inactive" element={<InactiveUsers />} />
-                <Route path="teams" element={<Teams />} />
-                <Route path="roles" element={<Roles />} />
-              </Route>
-              
-              <Route path="accounts" element={<Accounts />} />
-              
-              <Route path="reports" element={<Reports />} />
-              
-              {/* ... other admin routes ... */}
-            </Route>
+      {/* Protected User Routes */}
+      <Route path="/user" element={<MainLayout />}>
+        <Route path="dashboard" element={<UserDashboardContent />} />
+        <Route path="conversations" element={<UserConversationsIndex />} />
+        <Route path="leads" element={<UserLeadIndex />} />
+        <Route path="leads/:id" element={<UserLeadEdit />} />
+        <Route path="reports" element={<UserReports />} />
+      </Route>
 
-            {/* Manager Routes */}
-            <Route 
-              path="/manager" 
-              element={
-                <RouteGuard>
-                  <ProtectedRoute allowedRoles={['manager']} session={session} userRole={userRole}>
-                    <ManagerDashboard />
-                  </ProtectedRoute>
-                </RouteGuard>
-              }
-            >
-              <Route path="dashboard" element={<ManagerDashboardContent />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="leads/:id" element={<LeadEdit />} />
-              <Route path="conversations" element={<Conversations />} />
-            </Route>
-
-            {/* User Routes */}
-            <Route 
-              path="/user" 
-              element={
-                <RouteGuard>
-                  <ProtectedRoute allowedRoles={['user']} session={session} userRole={userRole}>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                </RouteGuard>
-              }
-            >
-              <Route path="dashboard" element={<UserDashboardContent />} />
-              <Route path="leads" element={<UserLeadIndex />} />
-              <Route path="leads/:id" element={<UserLeadEdit />} />
-              <Route path="conversations" element={<UserConversationsIndex />} />
-              <Route path="reports" element={<UserReports />} />
-            </Route>
-
-            {/* Redirect root to appropriate dashboard */}
-            <Route path="/" element={
-              <Navigate to={session ? `/${userRole}/dashboard` : '/login'} replace />
-            } />
-          </Routes>
-        </Layout.Content>
-      </Layout>
-    </Layout>
+      {/* Root redirect */}
+      <Route path="/" element={
+        <Navigate to={session ? `/${userRole}/dashboard` : '/login'} replace />
+      } />
+    </Routes>
   );
 };
 
