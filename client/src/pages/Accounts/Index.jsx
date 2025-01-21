@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, DatePicker, Select, Space, Button, Modal, Form, Input, InputNumber } from 'antd';
+import { useState, useEffect } from 'react';
+import { Card, DatePicker, Select, Space, Button, Modal, Form, Input, InputNumber, message } from 'antd';
 import { DollarOutlined, PlusOutlined } from '@ant-design/icons';
 import UniversalTable from '../../components/UniversalTable';
 import ActionDropdown from '../../components/ActionDropdown';
@@ -12,7 +12,15 @@ const Accounts = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [form] = Form.useForm();
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({
+    received: 0,
+    expenses: 0,
+    pending: 0,
+    total: 0
+  });
 
   const columns = [
     {
@@ -24,8 +32,8 @@ const Accounts = () => {
     },
     {
       title: 'TYPE',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'payment_type',
+      key: 'payment_type',
       render: (type) => (
         <span 
           className={`px-2 py-1 rounded-full ${
@@ -40,8 +48,8 @@ const Accounts = () => {
     },
     {
       title: 'MODE',
-      dataIndex: 'mode',
-      key: 'mode',
+      dataIndex: 'payment_mode',
+      key: 'payment_mode',
     },
     {
       title: 'AMOUNT',
@@ -62,31 +70,33 @@ const Accounts = () => {
     },
   ];
 
-  // Sample data - replace with actual data from your API
-  const mockData = [
-    {
-      id: 1,
-      type: 'Received',
-      mode: 'Online',
-      amount: 5000.00,
-    },
-    {
-      id: 2,
-      type: 'Expenses',
-      mode: 'Cash',
-      amount: 1500.00,
-    },
-    {
-      id: 3,
-      type: 'Payment',
-      mode: 'Cheque',
-      amount: 3000.00,
-    },
-  ];
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/accounts?timeRange=${timeRange}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch data');
+      }
+      
+      const data = await response.json();
+      
+      if (!Array.isArray(data.transactions)) {
+        throw new Error('Invalid transactions data received');
+      }
+      
+      setTransactions(data.transactions);
+      setStats(data.stats);
+    } catch (error) {
+      message.error('Error fetching data: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTimeRangeChange = (value) => {
     setTimeRange(value);
-    // Add logic to fetch data based on selected time range
+    // fetchData will be triggered by useEffect
   };
 
   const handleDateRangeChange = (dates) => {
@@ -104,18 +114,89 @@ const Accounts = () => {
   };
 
   const handleModalClose = () => {
+    setEditingRecord(null);
     form.resetFields();
     setIsModalOpen(false);
   };
 
+  const handleEdit = (record) => {
+    setEditingRecord(record);
+    form.setFieldsValue({
+      type: record.payment_type,
+      mode: record.payment_mode,
+      amount: record.amount,
+      client_name: record.client_name,
+      notes: record.notes
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (values) => {
     try {
-      message.success('Account created successfully');
+      setLoading(true);
+      
+      const formattedValues = {
+        payment_type: values.type,
+        payment_mode: values.mode,
+        amount: Number(values.amount),
+        payment_date: new Date().toISOString(),
+        client_name: values.client_name || null,
+        notes: values.notes || null,
+        payment_credit_debit: ['Received', 'Refunds'].includes(values.type) 
+          ? 'credit' 
+          : 'debit'
+      };
+
+      const url = editingRecord 
+        ? `/api/accounts/${editingRecord.id}`
+        : '/api/accounts';
+
+      const method = editingRecord ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedValues)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${editingRecord ? 'update' : 'create'} transaction`);
+      }
+
+      await response.json();
+      message.success(`Transaction ${editingRecord ? 'updated' : 'created'} successfully`);
       handleModalClose();
+      
     } catch (error) {
-      message.error('Error creating account: ' + error.message);
+      message.error(`Error ${editingRecord ? 'updating' : 'creating'} transaction: ` + error.message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleDelete = async (record) => {
+    try {
+      const response = await fetch(`/api/accounts/${record.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete transaction');
+      }
+
+      message.success('Transaction deleted successfully');
+    } catch (error) {
+      message.error('Error deleting transaction: ' + error.message);
+    }
+  };
+
+  const modalTitle = editingRecord ? 'Edit Transaction' : 'Add New Transaction';
+
+  useEffect(() => {
+    fetchData();
+  }, [timeRange]); // Refetch when timeRange changes
 
   return (
     <div className="p-6">
@@ -156,7 +237,7 @@ const Accounts = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Received</p>
-                <h2 className="text-2xl font-semibold">Rs. 47,500</h2>
+                <h2 className="text-2xl font-semibold">Rs.{stats.received.toFixed(2)}</h2>
               </div>
               <DollarOutlined className="text-2xl text-green-500" />
             </div>
@@ -165,7 +246,7 @@ const Accounts = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Expenses</p>
-                <h2 className="text-2xl font-semibold">Rs.1,500</h2>
+                <h2 className="text-2xl font-semibold">Rs.{stats.expenses.toFixed(2)}</h2>
               </div>
               <DollarOutlined className="text-2xl text-red-500" />
             </div>
@@ -174,7 +255,7 @@ const Accounts = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Pending</p>
-                <h2 className="text-2xl font-semibold">Rs.27,500</h2>
+                <h2 className="text-2xl font-semibold">Rs.{stats.pending.toFixed(2)}</h2>
               </div>
               <DollarOutlined className="text-2xl text-yellow-500" />
             </div>
@@ -183,7 +264,7 @@ const Accounts = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600">Total</p>
-                <h2 className="text-2xl font-semibold">Rs.46,000</h2>
+                <h2 className="text-2xl font-semibold">Rs.{stats.total.toFixed(2)}</h2>
               </div>
               <DollarOutlined className="text-2xl text-blue-500" />
             </div>
@@ -193,15 +274,16 @@ const Accounts = () => {
 
       <UniversalTable 
         columns={columns}
-        dataSource={mockData}
+        dataSource={transactions}
         loading={loading}
         onSearch={handleSearch}
         searchPlaceholder="Search transactions..."
+        rowKey="id"
       />
 
       {/* Add Transaction Modal */}
       <Modal
-        title="Add New Transaction"
+        title={modalTitle}
         open={isModalOpen}
         onCancel={handleModalClose}
         footer={null}
@@ -222,7 +304,8 @@ const Accounts = () => {
               options={[
                 { value: 'Received', label: 'Received' },
                 { value: 'Expenses', label: 'Expenses' },
-                { value: 'Payment', label: 'Payment' },
+                { value: 'Payments', label: 'Payments' },
+                { value: 'Refunds', label: 'Refunds' }
               ]}
             />
           </Form.Item>
@@ -235,10 +318,9 @@ const Accounts = () => {
             <Select
               placeholder="Select mode"
               options={[
-                { value: 'Cash', label: 'Cash' },
                 { value: 'Online', label: 'Online' },
-                { value: 'Cheque', label: 'Cheque' },
-                { value: 'Other', label: 'Other' },
+                { value: 'Cash', label: 'Cash' },
+                { value: 'Cheque', label: 'Cheque' }
               ]}
             />
           </Form.Item>
@@ -252,9 +334,23 @@ const Accounts = () => {
               className="w-full"
               min={0}
               placeholder="Enter amount"
-              formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              formatter={value => `Rs. ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/Rs\.\s?|(,*)/g, '')}
             />
+          </Form.Item>
+
+          <Form.Item
+            name="client_name"
+            label="Client Name"
+          >
+            <Input placeholder="Enter client name" />
+          </Form.Item>
+
+          <Form.Item
+            name="notes"
+            label="Notes"
+          >
+            <Input.TextArea rows={4} placeholder="Enter any additional notes" />
           </Form.Item>
 
           <Form.Item className="mb-0 flex justify-end gap-2">
@@ -269,7 +365,7 @@ const Accounts = () => {
                 borderColor: '#aa2478'
               }}
             >
-              Add Transaction
+              {modalTitle}
             </Button>
           </Form.Item>
         </Form>
