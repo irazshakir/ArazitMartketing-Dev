@@ -54,6 +54,29 @@ const getStageColor = (stageName) => {
   return stageColors[stageName] || 'default';
 };
 
+// Add this style object for scrollbar customization
+const scrollbarStyle = {
+  /* For Webkit browsers like Chrome/Safari */
+  '&::-webkit-scrollbar': {
+    width: '6px',
+    height: '6px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: '#f1f1f1',
+    borderRadius: '3px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#c1c1c1',
+    borderRadius: '3px',
+    '&:hover': {
+      background: '#a8a8a8',
+    },
+  },
+  /* For Firefox */
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#c1c1c1 #f1f1f1',
+};
+
 const Leads = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -357,7 +380,11 @@ const Leads = () => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    margin: 0
+    margin: 0,
+    height: '64px', // Fixed header height
+    position: 'sticky',
+    top: 0,
+    zIndex: 1
   };
 
   const actionButtonStyle = {
@@ -366,16 +393,24 @@ const Leads = () => {
   };
 
   return (
-    <Layout style={{ margin: 0, padding: 0 }}>
+    <Layout style={{ 
+      margin: 0, 
+      padding: 0, 
+      height: '100vh',
+      overflow: 'hidden', // Prevent main scroll
+      backgroundColor: '#fff'
+    }}>
       <div style={{ 
-        background: '#fff', 
-        minHeight: '100vh',
-        margin: 0,
-        padding: 0,
-        width: '100%'
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%', // Take full height
+        overflow: 'hidden' // Prevent scroll here
       }}>
-        {/* Header Section */}
-        <div style={headerStyle}>
+        {/* Header Section - Fixed height */}
+        <div style={{
+          ...headerStyle,
+          flex: '0 0 64px', // Fixed header height
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Title level={4} style={{ margin: 0 }}>Leads</Title>
             <Input.Search
@@ -410,10 +445,13 @@ const Leads = () => {
           </div>
         </div>
 
-        {/* Table Section */}
+        {/* Table Container - Flexible height with scroll */}
         <div style={{ 
-          padding: '24px',
-          margin: 0
+          flex: '1 1 auto',
+          overflow: 'hidden', // Hide overflow
+          padding: '16px 24px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           {loading ? (
             <TableSkeleton />
@@ -431,266 +469,276 @@ const Leads = () => {
                 showTotal: (total) => `Total ${total} items`,
                 showSizeChanger: true,
                 showQuickJumper: true,
+                pageSize: 10,
+                style: { 
+                  marginBottom: 0,
+                  padding: '16px 0'
+                }
               }}
-              style={{ margin: 0 }}
+              scroll={{ 
+                y: 'calc(100vh - 200px)' // Adjusted calculation
+              }}
+              style={{ 
+                margin: 0,
+                padding: 0,
+                flex: 1
+              }}
             />
           )}
         </div>
+      </div>
 
-        {/* Add/Edit Lead Modal */}
-        <Modal
-          title={editingLead ? 'Edit Lead' : 'Add Lead'}
-          visible={isModalVisible}
-          onCancel={() => {
-            setIsModalVisible(false);
-            setEditingLead(null);
-            form.resetFields();
-          }}
-          footer={null}
-          width={720}
-          bodyStyle={{ 
-            maxHeight: 'calc(100vh - 200px)',
-            overflow: 'auto'
-          }}
+      {/* Add/Edit Lead Modal */}
+      <Modal
+        title={editingLead ? 'Edit Lead' : 'Add Lead'}
+        visible={isModalVisible}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setEditingLead(null);
+          form.resetFields();
+        }}
+        footer={null}
+        width={720}
+        bodyStyle={{ 
+          maxHeight: 'calc(100vh - 200px)',
+          overflow: 'auto'
+        }}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleAddEdit}
+          initialValues={{ lead_active_status: true }}
+          style={{ padding: '20px 0' }}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleAddEdit}
-            initialValues={{ lead_active_status: true }}
-            style={{ padding: '20px 0' }}
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: 'Please input name!' }]}
           >
-            <Form.Item
-              name="name"
-              label="Name"
-              rules={[{ required: true, message: 'Please input name!' }]}
-            >
-              <Input />
-            </Form.Item>
+            <Input />
+          </Form.Item>
 
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[{ type: 'email', message: 'Please input valid email!' }]}
-            >
-              <Input />
-            </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ type: 'email', message: 'Please input valid email!' }]}
+          >
+            <Input />
+          </Form.Item>
 
-            <Form.Item
-              name="phone"
-              label="Phone"
-              rules={[{ required: true, message: 'Please input phone!' }]}
-            >
-              <Input />
-            </Form.Item>
+          <Form.Item
+            name="phone"
+            label="Phone"
+            rules={[{ required: true, message: 'Please input phone!' }]}
+          >
+            <Input />
+          </Form.Item>
 
-            <Form.Item
-              name="lead_product"
-              label="Product"
-              rules={[{ required: true, message: 'Please select product!' }]}
-            >
-              <Select>
-                {products.map(product => (
-                  <Select.Option key={product.id} value={product.id}>
-                    {product.product_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            name="lead_product"
+            label="Product"
+            rules={[{ required: true, message: 'Please select product!' }]}
+          >
+            <Select>
+              {products.map(product => (
+                <Select.Option key={product.id} value={product.id}>
+                  {product.product_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="lead_stage"
-              label="Stage"
-              rules={[{ required: true, message: 'Please select stage!' }]}
-            >
-              <Select>
-                {stages.map(stage => (
-                  <Select.Option key={stage.id} value={stage.id}>
-                    {stage.stage_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            name="lead_stage"
+            label="Stage"
+            rules={[{ required: true, message: 'Please select stage!' }]}
+          >
+            <Select>
+              {stages.map(stage => (
+                <Select.Option key={stage.id} value={stage.id}>
+                  {stage.stage_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="lead_source_id"
-              label="Lead Source"
-              rules={[{ required: true, message: 'Please select lead source!' }]}
-            >
-              <Select>
-                {leadSources.map(source => (
-                  <Select.Option key={source.id} value={source.id}>
-                    {source.lead_source_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            name="lead_source_id"
+            label="Lead Source"
+            rules={[{ required: true, message: 'Please select lead source!' }]}
+          >
+            <Select>
+              {leadSources.map(source => (
+                <Select.Option key={source.id} value={source.id}>
+                  {source.lead_source_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="assigned_user"
-              label="Lead Assigned"
-              rules={[{ required: true, message: 'Please select user!' }]}
-            >
-              <Select>
-                {users.map(user => (
-                  <Select.Option key={user.id} value={user.id}>
-                    {user.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            name="assigned_user"
+            label="Lead Assigned"
+            rules={[{ required: true, message: 'Please select user!' }]}
+          >
+            <Select>
+              {users.map(user => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="branch_id"
-              label="Branch"
-              rules={[{ required: true, message: 'Please select branch!' }]}
-            >
-              <Select>
-                {branches.map(branch => (
-                  <Select.Option key={branch.id} value={branch.id}>
-                    {branch.branch_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            name="branch_id"
+            label="Branch"
+            rules={[{ required: true, message: 'Please select branch!' }]}
+          >
+            <Select>
+              {branches.map(branch => (
+                <Select.Option key={branch.id} value={branch.id}>
+                  {branch.branch_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="fu_date"
-              label="Followup Date"
-              rules={[{ required: true, message: 'Please select followup date!' }]}
-            >
-              <Input type="date" />
-            </Form.Item>
+          <Form.Item
+            name="fu_date"
+            label="Followup Date"
+            rules={[{ required: true, message: 'Please select followup date!' }]}
+          >
+            <Input type="date" />
+          </Form.Item>
 
-            <Form.Item
-              name="initial_remarks"
-              label="Note"
-            >
-              <TextArea rows={4} />
-            </Form.Item>
+          <Form.Item
+            name="initial_remarks"
+            label="Note"
+          >
+            <TextArea rows={4} />
+          </Form.Item>
 
-            <Form.Item
-              name="lead_active_status"
-              label="Status"
-              valuePropName="checked"
-            >
-              <Switch 
-                checkedChildren="Active" 
-                unCheckedChildren="Inactive"
-                style={{ backgroundColor: theme.colors.primary }}
-              />
-            </Form.Item>
+          <Form.Item
+            name="lead_active_status"
+            label="Status"
+            valuePropName="checked"
+          >
+            <Switch 
+              checkedChildren="Active" 
+              unCheckedChildren="Inactive"
+              style={{ backgroundColor: theme.colors.primary }}
+            />
+          </Form.Item>
 
-            
-
-            <Form.Item>
-              <Space>
-                <Button type="primary" htmlType="submit" style={{ background: theme.colors.primary }}>
-                  {editingLead ? 'Update' : 'Submit'}
-                </Button>
-                <Button onClick={() => {
-                  setIsModalVisible(false);
-                  setEditingLead(null);
-                  form.resetFields();
-                }}>
-                  Cancel
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Filter Drawer */}
-        <Drawer
-          title="Filter Leads"
-          placement="right"
-          onClose={() => setIsFilterDrawerOpen(false)}
-          open={isFilterDrawerOpen}
-          width={400}
-          extra={
+          <Form.Item>
             <Space>
-              <Button onClick={resetFilters}>Reset</Button>
-              <Button 
-                type="primary" 
-                onClick={() => {
-                  handleFilterChange();
-                  setIsFilterDrawerOpen(false);
-                }}
-                style={{ background: theme.colors.primary }}
-              >
-                Apply
+              <Button type="primary" htmlType="submit" style={{ background: theme.colors.primary }}>
+                {editingLead ? 'Update' : 'Submit'}
+              </Button>
+              <Button onClick={() => {
+                setIsModalVisible(false);
+                setEditingLead(null);
+                form.resetFields();
+              }}>
+                Cancel
               </Button>
             </Space>
-          }
-        >
-          <Space direction="vertical" style={{ width: '100%' }} size="large">
-            <div>
-              <Typography.Text strong>Product</Typography.Text>
-              <Select
-                style={{ width: '100%', marginTop: 8 }}
-                placeholder="Select Product"
-                allowClear
-                value={filters.lead_product}
-                onChange={(value) => setFilters({ ...filters, lead_product: value })}
-              >
-                {products.map(product => (
-                  <Select.Option key={product.id} value={product.id}>
-                    {product.product_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
 
-            <div>
-              <Typography.Text strong>Stage</Typography.Text>
-              <Select
-                style={{ width: '100%', marginTop: 8 }}
-                placeholder="Select Stage"
-                allowClear
-                value={filters.lead_stage}
-                onChange={(value) => setFilters({ ...filters, lead_stage: value })}
-              >
-                {stages.map(stage => (
-                  <Select.Option key={stage.id} value={stage.id}>
-                    {stage.stage_name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            <div>
-              <Typography.Text strong>Assigned User</Typography.Text>
-              <Select
-                style={{ width: '100%', marginTop: 8 }}
-                placeholder="Select User"
-                allowClear
-                value={filters.assigned_user}
-                onChange={(value) => setFilters({ ...filters, assigned_user: value })}
-              >
-                {users.map(user => (
-                  <Select.Option key={user.id} value={user.id}>
-                    {user.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            <div>
-              <Typography.Text strong>Status</Typography.Text>
-              <Select
-                style={{ width: '100%', marginTop: 8 }}
-                placeholder="Select Status"
-                allowClear
-                value={filters.lead_active_status}
-                onChange={(value) => setFilters({ ...filters, lead_active_status: value })}
-              >
-                <Select.Option value={true}>Active</Select.Option>
-                <Select.Option value={false}>Inactive</Select.Option>
-              </Select>
-            </div>
+      {/* Filter Drawer */}
+      <Drawer
+        title="Filter Leads"
+        placement="right"
+        onClose={() => setIsFilterDrawerOpen(false)}
+        open={isFilterDrawerOpen}
+        width={400}
+        extra={
+          <Space>
+            <Button onClick={resetFilters}>Reset</Button>
+            <Button 
+              type="primary" 
+              onClick={() => {
+                handleFilterChange();
+                setIsFilterDrawerOpen(false);
+              }}
+              style={{ background: theme.colors.primary }}
+            >
+              Apply
+            </Button>
           </Space>
-        </Drawer>
-      </div>
+        }
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <div>
+            <Typography.Text strong>Product</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Product"
+              allowClear
+              value={filters.lead_product}
+              onChange={(value) => setFilters({ ...filters, lead_product: value })}
+            >
+              {products.map(product => (
+                <Select.Option key={product.id} value={product.id}>
+                  {product.product_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Stage</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Stage"
+              allowClear
+              value={filters.lead_stage}
+              onChange={(value) => setFilters({ ...filters, lead_stage: value })}
+            >
+              {stages.map(stage => (
+                <Select.Option key={stage.id} value={stage.id}>
+                  {stage.stage_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Assigned User</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select User"
+              allowClear
+              value={filters.assigned_user}
+              onChange={(value) => setFilters({ ...filters, assigned_user: value })}
+            >
+              {users.map(user => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Typography.Text strong>Status</Typography.Text>
+            <Select
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Select Status"
+              allowClear
+              value={filters.lead_active_status}
+              onChange={(value) => setFilters({ ...filters, lead_active_status: value })}
+            >
+              <Select.Option value={true}>Active</Select.Option>
+              <Select.Option value={false}>Inactive</Select.Option>
+            </Select>
+          </div>
+        </Space>
+      </Drawer>
     </Layout>
   );
 };

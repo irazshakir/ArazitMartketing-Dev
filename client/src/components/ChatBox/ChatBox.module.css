@@ -258,4 +258,50 @@
 
 .cannedMessagesMenu :global(.ant-dropdown-menu-item:hover) {
   background-color: #f5f5f5;
+}
+
+.messageBubble .documentContainer {
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Style for received document messages */
+.receivedMessage .documentContainer {
+  background-color: #f5f5f5;
+}
+
+/* Style for sent document messages */
+.sentMessage .documentContainer {
+  background-color: #dcf8c6 !important; /* WhatsApp-like green color */
+}
+
+.messageBubble .documentIcon {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+/* Adjust text colors based on message type */
+.receivedMessage .documentName {
+  color: #262626;
+}
+
+.sentMessage .documentName {
+  color: #262626; /* You can adjust this if you want a different color for sent messages */
+}
+
+.messageBubble .documentName {
+  margin: 0;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.messageBubble .downloadButton {
+  padding: 4px 8px;
+  height: auto;
+  font-size: 14px;
 } 

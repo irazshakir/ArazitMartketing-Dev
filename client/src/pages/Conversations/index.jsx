@@ -187,8 +187,18 @@ const Conversations = () => {
   }
 
   return (
-    <Layout className={styles.conversationsLayout}>
-      <Sider width={350} className={styles.chatListSider}>
+    <Layout className={styles.conversationsLayout} style={{ margin: 0, padding: 0 }}>
+      <Sider 
+        width={350} 
+        className={styles.chatListSider}
+        style={{ 
+          height: '100vh', 
+          overflow: 'auto',
+          margin: 0,
+          padding: 0,
+          borderRight: '1px solid #f0f0f0'
+        }}
+      >
         <ChatList 
           chats={leads}
           onChatSelect={handleChatSelect}
@@ -196,7 +206,7 @@ const Conversations = () => {
         />
       </Sider>
 
-      <Content className={styles.chatBoxSection}>
+      <Content style={{ margin: 0, padding: 0 }}>
         {selectedChat ? (
           <>
             <div className={styles.chatHeader}>
@@ -238,7 +248,11 @@ const Conversations = () => {
         )}
       </Content>
 
-      <Sider width={350} className={styles.chatInfoSider}>
+      <Sider 
+        width={350} 
+        className={styles.chatInfoSider}
+        style={{ height: '100vh', overflow: 'auto' }}
+      >
         {selectedChat && (
           <ChatInfo
             contact={{

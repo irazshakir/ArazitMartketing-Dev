@@ -35,6 +35,12 @@ const Sidebar = ({ collapsed, onCollapse }) => {
     getUserRole();
   }, []);
 
+  useEffect(() => {
+    if (!collapsed) {
+      onCollapse(true);
+    }
+  }, []);
+
   const getUserRole = async () => {
     try {
       const userStr = localStorage.getItem('user');
@@ -199,20 +205,27 @@ const Sidebar = ({ collapsed, onCollapse }) => {
         bottom: 0,
         backgroundColor: '#fff',
         zIndex: 1000,
-        overflow: 'hidden'
+        margin: 0,
+        padding: 0,
+        borderRight: '1px solid #f0f0f0'
       }}
     >
-      <div className="flex justify-between items-center" style={{ padding: '16px' }}>
+      <div style={{ 
+        display: 'flex',
+        alignItems: 'center',
+        padding: '8px',
+        height: '56px'
+      }}>
         <Logo collapsed={collapsed} />
         <button
           type="button"
           onClick={handleToggle}
-          className="text-gray-500 hover:text-primary rounded transition-colors"
           style={{ 
-            padding: '8px',
+            padding: '4px',
             cursor: 'pointer',
             border: 'none',
-            background: 'none'
+            background: 'none',
+            marginLeft: 'auto'
           }}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -220,13 +233,15 @@ const Sidebar = ({ collapsed, onCollapse }) => {
       </div>
       
       <div style={{ 
-        height: 'calc(100vh - 140px)', 
+        height: 'calc(100vh - 112px)',
         overflowY: 'auto',
-        transition: 'all 0.2s'
+        margin: 0,
+        padding: 0
       }}>
         <Menu
           mode="inline"
           selectedKeys={[location.pathname]}
+          style={{ border: 'none' }}
           items={getMenuItems().map(item => ({
             ...item,
             label: item.path ? (
@@ -251,19 +266,14 @@ const Sidebar = ({ collapsed, onCollapse }) => {
               }))
             })
           }))}
-          className="border-r-0"
-          inlineCollapsed={collapsed}
-          style={{ transition: 'all 0.2s' }}
         />
       </div>
 
       <div style={{ 
-        position: 'absolute', 
-        bottom: 0, 
-        left: 0, 
-        right: 0,
-        backgroundColor: '#fff',
-        borderTop: '1px solid #f0f0f0'
+        height: '56px',
+        borderTop: '1px solid #f0f0f0',
+        margin: 0,
+        padding: 0
       }}>
         <UserProfile collapsed={collapsed} />
       </div>
@@ -276,9 +286,8 @@ Sidebar.propTypes = {
   onCollapse: PropTypes.func
 };
 
-// Add default props
 Sidebar.defaultProps = {
-  collapsed: false,
+  collapsed: true,
   onCollapse: () => {}
 };
 

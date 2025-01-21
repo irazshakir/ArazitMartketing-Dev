@@ -107,18 +107,13 @@ const App = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      {!isLoginPage && isAuthenticated() && (
-        <Sidebar 
-          collapsed={collapsed} 
-          onCollapse={handleCollapse}
-        />
-      )}
+    <Layout>
+      <Sidebar collapsed={collapsed} onCollapse={setCollapsed} />
       <Layout style={{ 
-        marginLeft: (!isLoginPage && isAuthenticated()) ? (collapsed ? 80 : 250) : 0,
-        minHeight: '100vh',
+        marginLeft: collapsed ? '80px' : '250px',
+        transition: 'margin-left 0.2s',
         padding: 0,
-        transition: 'all 0.2s'
+        margin: 0
       }}>
         <Layout.Content style={{ 
           padding: 0,

@@ -387,15 +387,19 @@ const ChatBox = ({
     fetchMessages();
   }, [id]);
 
-  // Add file upload handler
-  const handleUpload = async (file, type) => {
+  // Update the file upload handler
+  const handleUpload = async (file) => {
     setUploading(true);
     try {
+      // Determine the media type based on file mime type
+      const mediaType = file.type.startsWith('audio/') ? 'audio' : 'document';
+      
       const formData = new FormData();
       formData.append('file', file);
       formData.append('recipient', phone);
-      formData.append('mediaType', type);
+      formData.append('mediaType', mediaType);
       formData.append('mimeType', file.type);
+      formData.append('fileName', file.name); // Add filename explicitly
       formData.append('leadId', id);
       
       const uploadResponse = await axios.post(`${BACKEND_URL}/api/webhook/send-media`, formData, {
@@ -409,15 +413,15 @@ const ChatBox = ({
         const serverTimestamp = Math.floor(Date.now() / 1000);
         setMessages(prev => [...prev, {
           id: uploadResponse.data.messageId || Date.now(),
-          message: type === 'document' ? `[Document: ${file.name}]` : '[Audio Message]',
-          media_url: uploadResponse.data.data.url,
+          message: `[Document: ${file.name}]`,
+          media_url: uploadResponse.data.data?.url,
           timestamp: serverTimestamp,
           is_outgoing: true,
           phone: phone,
-          type: type
+          type: mediaType
         }]);
       } else {
-        antMessage.error('Failed to send file');
+        throw new Error(uploadResponse.data.error || 'Failed to send file');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -568,6 +572,8 @@ const ChatBox = ({
           });
 
           if (item.type === 'document') {
+            const fileName = item.message.replace('[Document: ', '').replace(']', '');
+            
             return (
               <div 
                 key={item.id || index}
@@ -575,14 +581,15 @@ const ChatBox = ({
               >
                 <div className={styles.messageBubble}>
                   <div className={styles.messageText}>
-                    <div className={styles.documentPreview}>
+                    <div className={styles.documentContainer}>
                       <FileOutlined className={styles.documentIcon} />
-                      <span>{item.message}</span>
+                      <span className={styles.documentName}>{fileName}</span>
                       {item.media_url && (
                         <Button 
                           type="link" 
                           icon={<DownloadOutlined />}
                           onClick={() => window.open(item.media_url, '_blank')}
+                          className={styles.downloadButton}
                         >
                           Download
                         </Button>
@@ -713,9 +720,13 @@ const ChatBox = ({
                     )}
                   </div>
                   <Upload
-                    beforeUpload={handleUpload}
+                    beforeUpload={(file) => {
+                      handleUpload(file);
+                      return false; // Prevent default upload behavior
+                    }}
                     fileList={fileList}
                     showUploadList={false}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,audio/*" // Add accepted file types
                   >
                     <Button 
                       type="text" 

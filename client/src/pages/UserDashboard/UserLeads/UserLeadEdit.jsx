@@ -239,12 +239,7 @@ const UserLeadEdit = () => {
         height: 'calc(100vh - 57px)',
         margin: 0
       }}>
-        <Content style={{ 
-          height: '100%',
-          overflow: 'hidden',
-          padding: 0,
-          margin: 0
-        }}>
+        <Content>
           <ChatBox 
             onSendMessage={handleSendMessage}
             onAddNote={handleAddNote}
