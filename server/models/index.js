@@ -74,10 +74,19 @@ export const UserModel = {
     try {
       let query = supabase
         .from('users')
-        .select('id, name');
+        .select(`
+          id, 
+          name,
+          email,
+          user_is_active,
+          roles (
+            role_name
+          )
+        `);
       
-      if (where?.is_active) {
-        query = query.eq('user_is_active', true);
+      // If is_active is specified in where clause, filter accordingly
+      if (where?.is_active !== undefined) {
+        query = query.eq('user_is_active', where.is_active);
       }
       
       const { data, error } = await query;

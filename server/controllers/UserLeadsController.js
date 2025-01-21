@@ -1,4 +1,5 @@
 import { supabase } from '../config/database.js';
+import { createLog, getLeadLogs, ACTION_TYPES } from '../services/leadLogService.js';
 
 const UserLeadsController = {
   getUserLeads: async (req, res) => {
@@ -259,21 +260,103 @@ const UserLeadsController = {
       const userId = req.user.id;
       const updateData = req.body;
 
-      // Verify the lead belongs to the user
-      const { data: leadData, error: leadError } = await supabase
+      console.log('UserLeadsController - Updating lead:', {
+        leadId: id,
+        userId,
+        updateData
+      });
+
+      // Get current lead data for comparison
+      const { data: currentLead, error: fetchError } = await supabase
         .from('leads')
-        .select('id')
+        .select('*')
         .eq('id', id)
-        .eq('assigned_user', userId)
         .single();
 
-      if (leadError || !leadData) {
+      if (fetchError) throw fetchError;
+
+      // Verify the lead belongs to the user
+      if (currentLead.assigned_user !== userId) {
         return res.status(403).json({
           success: false,
           error: 'Unauthorized to update this lead'
         });
       }
 
+      // Create logs for each changed field
+      const logPromises = [];
+
+      // Check each field and create appropriate logs
+      if (updateData.name !== currentLead.name) {
+        logPromises.push(createLog({
+          leadId: id,
+          userId,
+          actionType: ACTION_TYPES.NAME_CHANGE,
+          oldValue: { name: currentLead.name },
+          newValue: { name: updateData.name },
+          description: `Name changed from "${currentLead.name}" to "${updateData.name}"`
+        }));
+      }
+
+      if (updateData.email !== currentLead.email) {
+        logPromises.push(createLog({
+          leadId: id,
+          userId,
+          actionType: ACTION_TYPES.EMAIL_CHANGE,
+          oldValue: { email: currentLead.email },
+          newValue: { email: updateData.email },
+          description: `Email changed from "${currentLead.email || 'none'}" to "${updateData.email || 'none'}"`
+        }));
+      }
+
+      if (updateData.phone !== currentLead.phone) {
+        logPromises.push(createLog({
+          leadId: id,
+          userId,
+          actionType: ACTION_TYPES.PHONE_CHANGE,
+          oldValue: { phone: currentLead.phone },
+          newValue: { phone: updateData.phone },
+          description: `Phone changed from "${currentLead.phone || 'none'}" to "${updateData.phone || 'none'}"`
+        }));
+      }
+
+      if (updateData.lead_stage !== currentLead.lead_stage) {
+        const { data: stages } = await supabase
+          .from('stages')
+          .select('stage_name')
+          .in('id', [currentLead.lead_stage, updateData.lead_stage]);
+        
+        const oldStage = stages.find(s => s.id === currentLead.lead_stage)?.stage_name;
+        const newStage = stages.find(s => s.id === updateData.lead_stage)?.stage_name;
+        
+        logPromises.push(createLog({
+          leadId: id,
+          userId,
+          actionType: ACTION_TYPES.STAGE_CHANGE,
+          oldValue: { lead_stage: currentLead.lead_stage, stage_name: oldStage },
+          newValue: { lead_stage: updateData.lead_stage, stage_name: newStage },
+          description: `Stage changed from "${oldStage}" to "${newStage}"`
+        }));
+      }
+
+      // Similar checks for other fields...
+      if (updateData.lead_product !== currentLead.lead_product) {
+        // Log product change
+      }
+      if (updateData.lead_source_id !== currentLead.lead_source_id) {
+        // Log source change
+      }
+      if (updateData.branch_id !== currentLead.branch_id) {
+        // Log branch change
+      }
+      if (updateData.lead_active_status !== currentLead.lead_active_status) {
+        // Log status change
+      }
+      if (updateData.fu_date !== currentLead.fu_date) {
+        // Log followup date change
+      }
+
+      // Update the lead
       const { data, error } = await supabase
         .from('leads')
         .update(updateData)
@@ -281,6 +364,12 @@ const UserLeadsController = {
         .select();
 
       if (error) throw error;
+
+      // Create all logs
+      if (logPromises.length > 0) {
+        console.log('Creating logs for changes:', logPromises.length);
+        await Promise.all(logPromises);
+      }
 
       res.json({
         success: true,
@@ -431,6 +520,15 @@ const UserLeadsController = {
       });
 
       if (error) throw error;
+
+      // Create log entry for note
+      await createLog({
+        leadId: id,
+        userId,
+        actionType: ACTION_TYPES.NOTE_ADDED,
+        newValue: { note, note_id: data.id },
+        description: `New note added`
+      });
 
       res.json({
         success: true,
@@ -678,6 +776,54 @@ const UserLeadsController = {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch general settings',
+        details: error.message
+      });
+    }
+  },
+
+  getLeadLogs: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      console.log('UserLeadsController - Fetching logs for lead:', {
+        leadId: id,
+        userId: userId
+      });
+
+      // Verify if the lead belongs to the current user
+      const { data: leadData, error: leadError } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('id', id)
+        .eq('assigned_user', userId)
+        .single();
+
+      if (leadError || !leadData) {
+        console.log('UserLeadsController - Unauthorized log access attempt');
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized to view this lead\'s logs'
+        });
+      }
+
+      // Get logs using the imported function
+      const logs = await getLeadLogs(id);
+      
+      console.log('UserLeadsController - Logs fetched successfully:', {
+        leadId: id,
+        logsCount: logs.length
+      });
+
+      res.json({
+        success: true,
+        data: logs
+      });
+    } catch (error) {
+      console.error('UserLeadsController - Error fetching lead logs:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch lead logs',
         details: error.message
       });
     }

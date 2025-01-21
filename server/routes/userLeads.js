@@ -115,4 +115,7 @@ router.patch('/user-leads/:id/assign', checkAuth, UserLeadsController.assignLead
 
 router.get('/general-settings', UserLeadsController.getGeneralSettings);
 
+// Add this route to get lead logs
+router.get('/user-leads/:id/logs', checkAuth, UserLeadsController.getLeadLogs);
+
 export default router; 
