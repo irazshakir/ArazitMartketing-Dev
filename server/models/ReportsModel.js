@@ -3,14 +3,6 @@ import { supabase } from '../config/database.js';
 const ReportsModel = {
   getReportsStats: async ({ currentDate, currentMonthStart, branchId, startDate, endDate }) => {
     try {
-      console.log('Reports Model - Query Parameters:', {
-        currentDate,
-        currentMonthStart,
-        branchId,
-        startDate,
-        endDate
-      });
-
       // New Leads Query
       let newLeadsQuery = supabase
         .from('leads')
@@ -34,10 +26,7 @@ const ReportsModel = {
 
       const { data: newLeads, error: newLeadsError } = await newLeadsQuery;
 
-      if (newLeadsError) {
-        console.error('New Leads Query Error:', newLeadsError);
-        throw newLeadsError;
-      }
+      if (newLeadsError) throw newLeadsError;
 
       // Active Leads Query
       let activeLeadsQuery = supabase
@@ -51,10 +40,7 @@ const ReportsModel = {
 
       const { data: activeLeads, error: activeLeadsError } = await activeLeadsQuery;
 
-      if (activeLeadsError) {
-        console.error('Active Leads Query Error:', activeLeadsError);
-        throw activeLeadsError;
-      }
+      if (activeLeadsError) throw activeLeadsError;
 
       // Closed Leads Query
       let closedLeadsQuery = supabase
@@ -80,10 +66,7 @@ const ReportsModel = {
 
       const { data: closedLeads, error: closedLeadsError } = await closedLeadsQuery;
 
-      if (closedLeadsError) {
-        console.error('Closed Leads Query Error:', closedLeadsError);
-        throw closedLeadsError;
-      }
+      if (closedLeadsError) throw closedLeadsError;
 
       // Sales Leads Query
       let salesLeadsQuery = supabase
@@ -109,10 +92,7 @@ const ReportsModel = {
 
       const { data: salesLeads, error: salesLeadsError } = await salesLeadsQuery;
 
-      if (salesLeadsError) {
-        console.error('Sales Leads Query Error:', salesLeadsError);
-        throw salesLeadsError;
-      }
+      if (salesLeadsError) throw salesLeadsError;
 
       // Non Potential Leads Query
       let nonPotentialLeadsQuery = supabase
@@ -138,10 +118,7 @@ const ReportsModel = {
 
       const { data: nonPotentialLeads, error: nonPotentialLeadsError } = await nonPotentialLeadsQuery;
 
-      if (nonPotentialLeadsError) {
-        console.error('Non Potential Leads Query Error:', nonPotentialLeadsError);
-        throw nonPotentialLeadsError;
-      }
+      if (nonPotentialLeadsError) throw nonPotentialLeadsError;
 
       // Hot Leads Query
       let hotLeadsQuery = supabase
@@ -167,10 +144,7 @@ const ReportsModel = {
 
       const { data: hotLeads, error: hotLeadsError } = await hotLeadsQuery;
 
-      if (hotLeadsError) {
-        console.error('Hot Leads Query Error:', hotLeadsError);
-        throw hotLeadsError;
-      }
+      if (hotLeadsError) throw hotLeadsError;
 
       // Followup Required Query
       let followupRequiredQuery = supabase
@@ -186,10 +160,7 @@ const ReportsModel = {
 
       const { data: followupRequired, error: followupRequiredError } = await followupRequiredQuery;
 
-      if (followupRequiredError) {
-        console.error('Followup Required Query Error:', followupRequiredError);
-        throw followupRequiredError;
-      }
+      if (followupRequiredError) throw followupRequiredError;
 
       return {
         newLeads: newLeads[0]?.count || 0,
@@ -202,7 +173,6 @@ const ReportsModel = {
       };
 
     } catch (error) {
-      console.error('ReportsModel Error:', error);
       throw error;
     }
   },
@@ -332,7 +302,6 @@ const ReportsModel = {
       return userStats;
 
     } catch (error) {
-      console.error('Error in getUserWiseLeadStats:', error);
       throw error;
     }
   },
@@ -409,7 +378,6 @@ const ReportsModel = {
       return chartData;
 
     } catch (error) {
-      console.error('Error in getLeadsTrend:', error);
       throw error;
     }
   },
@@ -525,7 +493,6 @@ const ReportsModel = {
       return productStats;
 
     } catch (error) {
-      console.error('Error in getProductWiseStats:', error);
       throw error;
     }
   },
@@ -593,7 +560,6 @@ const ReportsModel = {
 
       return chartData;
     } catch (error) {
-      console.error('Error in getProductTrends:', error);
       throw error;
     }
   }

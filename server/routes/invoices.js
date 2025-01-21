@@ -34,7 +34,6 @@ router.get('/invoices', async (req, res) => {
     
     res.json(invoices);
   } catch (error) {
-    console.error('Route error:', error);
     res.status(500).json({ 
       message: 'Error fetching invoices', 
       error: error.message 

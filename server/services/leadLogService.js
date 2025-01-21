@@ -39,7 +39,6 @@ export const createLog = async ({
     if (error) throw error;
     return data[0];
   } catch (error) {
-    console.error('Error creating log:', error);
     throw error;
   }
 };
@@ -69,7 +68,6 @@ export const getLeadLogs = async (leadId) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error fetching lead logs:', error);
     throw error;
   }
 }; 

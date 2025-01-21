@@ -9,7 +9,6 @@ router.get('/branches', async (req, res) => {
     const branches = await BranchModel.findAll();
     res.json(branches);
   } catch (error) {
-    console.error('Error in GET /branches:', error);
     res.status(500).json({ 
       message: 'Error fetching branches',
       error: error.message 
@@ -23,7 +22,6 @@ router.post('/branches', async (req, res) => {
     const branch = await BranchModel.create(req.body);
     res.status(201).json(branch);
   } catch (error) {
-    console.error('Error in POST /branches:', error);
     res.status(500).json({ 
       message: 'Error creating branch',
       error: error.message 
@@ -40,7 +38,6 @@ router.put('/branches/:id', async (req, res) => {
     }
     res.json(branch);
   } catch (error) {
-    console.error('Error in PUT /branches/:id:', error);
     res.status(500).json({ 
       message: 'Error updating branch',
       error: error.message 
@@ -54,7 +51,6 @@ router.delete('/branches/:id', async (req, res) => {
     await BranchModel.destroy(req.params.id);
     res.json({ message: 'Branch deleted successfully' });
   } catch (error) {
-    console.error('Error in DELETE /branches/:id:', error);
     res.status(500).json({ 
       message: 'Error deleting branch',
       error: error.message 

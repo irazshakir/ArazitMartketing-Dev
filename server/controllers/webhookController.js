@@ -65,7 +65,7 @@ export const receiveMessage = async (req, res) => {
           .single();
 
         if (leadQueryError) {
-          console.error('❌ Error querying lead:', leadQueryError);
+          message.error('❌ Error querying lead:', leadQueryError);
         }
 
         // Store the message with appropriate lead information
@@ -97,7 +97,6 @@ export const receiveMessage = async (req, res) => {
             .single();
 
           if (createError) {
-            console.error('❌ Error creating lead:', createError);
             throw createError;
           }
           
@@ -187,7 +186,6 @@ export const receiveMessage = async (req, res) => {
           }]);
 
         if (messageError) {
-          console.error('❌ Error storing message:', messageError);
           throw messageError;
         }
 
@@ -310,7 +308,7 @@ export const replyMessage = async (req, res) => {
       .single();
 
     if (messageError) {
-      console.error('❌ Error storing outgoing message:', messageError);
+      message.error('❌ Error storing outgoing message:', messageError);
     }
 
     res.status(200).json({ 
@@ -320,7 +318,6 @@ export const replyMessage = async (req, res) => {
       messageId: messageData?.id
     });
   } catch (error) {
-    console.error('❌ Error sending reply:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 

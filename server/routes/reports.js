@@ -23,7 +23,6 @@ router.get('/user-stats', async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    console.error('Error in user stats route:', error);
     res.status(500).json({ error: 'Failed to fetch user statistics' });
   }
 });
@@ -45,7 +44,6 @@ router.get('/trends', async (req, res) => {
 
     res.json(trendData);
   } catch (error) {
-    console.error('Error in trends route:', error);
     res.status(500).json({ error: 'Failed to fetch trend data' });
   }
 });
@@ -67,7 +65,6 @@ router.get('/product-stats', async (req, res) => {
 
     res.json(productStats);
   } catch (error) {
-    console.error('Error in product stats route:', error);
     res.status(500).json({ error: 'Failed to fetch product statistics' });
   }
 });
@@ -89,7 +86,6 @@ router.get('/product-trends', async (req, res) => {
 
     res.json(trendData);
   } catch (error) {
-    console.error('Error in product trends route:', error);
     res.status(500).json({ error: 'Failed to fetch product trend data' });
   }
 });

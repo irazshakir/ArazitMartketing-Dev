@@ -3,15 +3,7 @@ import { supabase } from '../config/database.js';
 const DashboardModel = {
   getDashboardStats: async ({ currentDate, currentMonthStart, branchId, startDate, endDate, timeRange }) => {
     try {
-      console.log('Query Parameters:', { // Debug log
-        currentDate,
-        currentMonthStart,
-        branchId,
-        startDate,
-        endDate
-      });
-
-      // 1. Today's Leads - Fix date comparison
+      // 1. Today's Leads
       let todayLeadsQuery = supabase
         .from('leads')
         .select('count')
@@ -23,7 +15,6 @@ const DashboardModel = {
       }
 
       const { data: todayLeads, error: todayError } = await todayLeadsQuery;
-      console.log('Today Leads Query Result:', { data: todayLeads, error: todayError }); // Debug log
 
       // 2. New Customers Added - Fix date range
       let newCustomersQuery = supabase
@@ -45,7 +36,6 @@ const DashboardModel = {
       }
 
       const { data: newCustomers, error: newCustomersError } = await newCustomersQuery;
-      console.log('New Customers Query Result:', { data: newCustomers, error: newCustomersError }); // Debug log
 
       // 3. Today's Followups
       let followupsQuery = supabase
@@ -112,15 +102,6 @@ const DashboardModel = {
 
       // Check for any errors
       if (todayError || newCustomersError || followupsError || hotError || activeError || hotActiveError || salesError) {
-        console.error('Database Errors:', {
-          todayError,
-          newCustomersError,
-          followupsError,
-          hotError,
-          activeError,
-          hotActiveError,
-          salesError
-        });
         throw new Error('Error fetching dashboard statistics');
       }
 
@@ -197,7 +178,6 @@ const DashboardModel = {
         periodEnd: queryEndDate
       };
     } catch (error) {
-      console.error('DashboardModel Error:', error);
       throw error;
     }
   },
@@ -213,21 +193,12 @@ const DashboardModel = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Get Branches Error:', error);
       throw error;
     }
   },
 
   getLeadsVsClosedStats: async ({ currentMonthStart, currentDate, branchId, startDate, endDate }) => {
     try {
-      console.log('Fetching leads vs closed stats with params:', {
-        currentMonthStart,
-        currentDate,
-        branchId,
-        startDate,
-        endDate
-      });
-
       // Determine date range
       const queryStartDate = startDate || currentMonthStart;
       const queryEndDate = endDate || currentDate;
@@ -295,7 +266,6 @@ const DashboardModel = {
       };
 
     } catch (error) {
-      console.error('Error in getLeadsVsClosedStats:', error);
       throw error;
     }
   }

@@ -200,7 +200,6 @@ router.get('/leads/:id/notes', async (req, res) => {
       data: data || [] // Ensure we always return an array
     });
   } catch (error) {
-    console.error('Error fetching notes:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Error fetching notes',
@@ -235,7 +234,6 @@ router.post('/leads/:id/notes', async (req, res) => {
       data
     });
   } catch (error) {
-    console.error('Error creating note:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Error creating note',

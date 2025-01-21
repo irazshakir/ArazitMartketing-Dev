@@ -7,6 +7,7 @@ import DashboardModel from './DashboardModel.js';
 import ReportsModel from './ReportsModel.js';
 import UserDashboardModel from './UserDashboardModel.js';
 import { TemplateMessageModel } from './TemplateMessageModel.js';
+import AccountModel from './AccountModel.js';
 
 // Direct model definitions
 export const ProductModel = {
@@ -468,6 +469,7 @@ export {
   DashboardModel,
   ReportsModel,
   UserDashboardModel,
-  TemplateMessageModel
+  TemplateMessageModel,
+  AccountModel
 };
 

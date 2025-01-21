@@ -305,14 +305,12 @@ router.get('/current-user', async (req, res) => {
         data: userData
       });
     } catch (error) {
-      console.error('Auth route error:', error);
       return res.status(401).json({
         status: 'error',
         message: 'Invalid or expired session'
       });
     }
   } catch (error) {
-    console.error('Unhandled error:', error);
     res.status(500).json({ 
       status: 'error',
       message: 'Error fetching current user',

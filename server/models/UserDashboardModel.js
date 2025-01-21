@@ -107,7 +107,6 @@ const UserDashboardModel = {
         periodEnd: queryEndDate
       };
     } catch (error) {
-      console.error('Model error:', error);
       throw error;
     }
   },

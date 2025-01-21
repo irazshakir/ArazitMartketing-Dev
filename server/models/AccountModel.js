@@ -20,7 +20,8 @@ const AccountModel = {
     try {
       let query = supabase
         .from('accounts')
-        .select('*');
+        .select('*')
+        .order('payment_date', { ascending: false });
 
       // Add search filter if provided
       if (search && search.trim()) {
@@ -38,7 +39,7 @@ const AccountModel = {
       // Handle date filtering
       if (timeRange) {
         const now = new Date();
-        const formatDate = (date) => date.toISOString().split('T')[0];
+        const formatDate = (date) => date.toISOString();
 
         switch(timeRange) {
           case '7days':
@@ -74,12 +75,8 @@ const AccountModel = {
           .lte('payment_date', endDate);
       }
 
-      // Order by payment date descending
-      query = query.order('payment_date', { ascending: false });
-
       const { data, error } = await query;
       if (error) throw error;
-
       return data || [];
     } catch (error) {
       throw error;

@@ -64,14 +64,9 @@ const UserLeadsController = {
         query = query.eq('fu_date', fu_date);
       }
 
-      console.log('UserLeadsController - Executing query with search:', { search, userId });
-
       const { data, error } = await query;
 
-      if (error) {
-        console.error('UserLeadsController - Supabase query error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       // Sort the leads:
       // 1. Active leads first
@@ -106,24 +101,15 @@ const UserLeadsController = {
         lead_active_status: Boolean(lead.lead_active_status)
       }));
 
-      console.log('UserLeadsController - Successfully fetched leads:', {
-        totalLeads: transformedLeads.length,
-        searchApplied: !!search
-      });
-
       res.json({
         success: true,
         data: transformedLeads
       });
     } catch (error) {
-      console.error('UserLeadsController - Error in getUserLeads:', {
-        error: error.message,
-        stack: error.stack
-      });
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         error: 'Failed to fetch leads',
-        details: error.message 
+        details: error.message
       });
     }
   },
@@ -172,7 +158,6 @@ const UserLeadsController = {
         data
       });
     } catch (error) {
-      console.error('Error in getUserLead:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch lead details',
@@ -187,12 +172,6 @@ const UserLeadsController = {
       const { note } = req.body;
       const userId = req.user.id;
 
-      console.log('UserLeadsController - Adding note:', {
-        leadId: id,
-        userId,
-        note
-      });
-
       // Verify the lead belongs to the user
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
@@ -200,11 +179,6 @@ const UserLeadsController = {
         .eq('id', id)
         .eq('assigned_user', userId)
         .single();
-
-      console.log('UserLeadsController - Lead verification:', {
-        leadData,
-        error: leadError?.message
-      });
 
       if (leadError || !leadData) {
         return res.status(403).json({
@@ -230,11 +204,6 @@ const UserLeadsController = {
         `)
         .single();
 
-      console.log('UserLeadsController - Note creation:', {
-        data,
-        error: error?.message
-      });
-
       if (error) throw error;
 
       res.json({
@@ -242,10 +211,6 @@ const UserLeadsController = {
         data
       });
     } catch (error) {
-      console.error('UserLeadsController - Error in addLeadNote:', {
-        message: error.message,
-        stack: error.stack
-      });
       res.status(500).json({
         success: false,
         error: 'Failed to add note',
@@ -259,12 +224,6 @@ const UserLeadsController = {
       const { id } = req.params;
       const userId = req.user.id;
       const updateData = req.body;
-
-      console.log('UserLeadsController - Updating lead:', {
-        leadId: id,
-        userId,
-        updateData
-      });
 
       // Get current lead data for comparison
       const { data: currentLead, error: fetchError } = await supabase
@@ -367,7 +326,6 @@ const UserLeadsController = {
 
       // Create all logs
       if (logPromises.length > 0) {
-        console.log('Creating logs for changes:', logPromises.length);
         await Promise.all(logPromises);
       }
 
@@ -376,7 +334,6 @@ const UserLeadsController = {
         data
       });
     } catch (error) {
-      console.error('Error in updateLead:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to update lead',
@@ -387,12 +344,6 @@ const UserLeadsController = {
 
   getUserLeadNotes: async (req, res) => {
     try {
-      console.log('UserLeadsController - Getting notes:', {
-        leadId: req.params.id,
-        userId: req.user?.id,
-        userRole: req.user?.roles?.role_name
-      });
-
       const { id } = req.params;
       const userId = req.user.id;
 
@@ -404,13 +355,7 @@ const UserLeadsController = {
         .eq('assigned_user', userId)
         .single();
 
-      console.log('UserLeadsController - Lead verification:', {
-        leadData,
-        error: leadError?.message
-      });
-
       if (leadError || !leadData) {
-        console.log('UserLeadsController - Unauthorized access attempt');
         return res.status(403).json({
           success: false,
           error: 'Unauthorized to view notes for this lead'
@@ -430,11 +375,6 @@ const UserLeadsController = {
         .eq('lead_id', id)
         .order('created_at', { ascending: false });
 
-      console.log('UserLeadsController - Notes query result:', {
-        notesCount: notes?.length,
-        error: error?.message
-      });
-
       if (error) throw error;
 
       // Ensure we're returning an array in the data property
@@ -443,10 +383,6 @@ const UserLeadsController = {
         data: notes || [] // Ensure we always return an array
       });
     } catch (error) {
-      console.error('UserLeadsController - Error:', {
-        message: error.message,
-        stack: error.stack
-      });
       res.status(500).json({
         success: false,
         error: 'Failed to fetch notes',
@@ -461,14 +397,6 @@ const UserLeadsController = {
       const { note } = req.body;
       const userId = req.user.id;
 
-      console.log('UserLeadsController - Adding note request:', {
-        leadId: id,
-        userId: userId,
-        note: note,
-        body: req.body,
-        user: req.user
-      });
-
       // Verify if the lead belongs to the user
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
@@ -477,19 +405,7 @@ const UserLeadsController = {
         .eq('assigned_user', userId)
         .single();
 
-      console.log('UserLeadsController - Lead verification:', {
-        leadData,
-        error: leadError?.message,
-        userId,
-        leadId: id
-      });
-
       if (leadError || !leadData) {
-        console.log('UserLeadsController - Unauthorized attempt:', {
-          userId,
-          leadId: id,
-          error: leadError?.message
-        });
         return res.status(403).json({
           success: false,
           error: 'Unauthorized to add notes to this lead'
@@ -513,12 +429,6 @@ const UserLeadsController = {
         `)
         .single();
 
-      console.log('UserLeadsController - Note creation result:', {
-        success: !error,
-        data: data,
-        error: error?.message
-      });
-
       if (error) throw error;
 
       // Create log entry for note
@@ -535,10 +445,6 @@ const UserLeadsController = {
         data
       });
     } catch (error) {
-      console.error('UserLeadsController - Error in addUserLeadNote:', {
-        message: error.message,
-        stack: error.stack
-      });
       res.status(500).json({
         success: false,
         error: 'Failed to add note',
@@ -551,22 +457,13 @@ const UserLeadsController = {
     try {
       const userId = req.user.id;
 
-      console.log('UserLeadsController - Getting current user - Initial data:', {
-        userId,
-        reqUser: req.user,
-        headers: req.headers
-      });
-
       // First check if we have valid user ID
       if (!userId) {
-        console.error('UserLeadsController - No user ID provided');
         return res.status(400).json({
           success: false,
           error: 'No user ID provided'
         });
       }
-
-      console.log('UserLeadsController - Executing Supabase query for user:', userId);
 
       // Updated query with error catching
       let queryResponse;
@@ -586,39 +483,17 @@ const UserLeadsController = {
           .eq('id', userId)
           .eq('user_is_active', true);
 
-        console.log('UserLeadsController - Raw Supabase response:', {
-          data: queryResponse.data,
-          error: queryResponse.error,
-          status: queryResponse.status,
-          statusText: queryResponse.statusText
-        });
-
       } catch (dbError) {
-        console.error('UserLeadsController - Database query error:', {
-          error: dbError.message,
-          stack: dbError.stack,
-          details: dbError.details
-        });
         throw dbError;
       }
 
       const { data: userData, error } = queryResponse;
 
       if (error) {
-        console.error('UserLeadsController - Database error details:', {
-          message: error.message,
-          hint: error.hint,
-          details: error.details,
-          code: error.code
-        });
         throw error;
       }
 
       if (!userData || userData.length === 0) {
-        console.log('UserLeadsController - No user found or user inactive:', {
-          userId,
-          queryResult: userData
-        });
         return res.status(404).json({
           success: false,
           error: 'User not found or inactive'
@@ -627,27 +502,11 @@ const UserLeadsController = {
 
       const user = Array.isArray(userData) ? userData[0] : userData;
 
-      console.log('UserLeadsController - User data fetched successfully:', {
-        userId: user.id,
-        name: user.name,
-        roleId: user.role_id,
-        isActive: user.user_is_active,
-        role: user.roles?.role_name,
-        fullData: user
-      });
-
       res.json({
         success: true,
         data: user
       });
     } catch (error) {
-      console.error('UserLeadsController - Critical error in getCurrentUser:', {
-        message: error.message,
-        stack: error.stack,
-        type: error.constructor.name,
-        details: error.details || 'No additional details'
-      });
-
       // Check if it's a database connection error
       if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
         return res.status(503).json({
@@ -671,12 +530,6 @@ const UserLeadsController = {
       const { assigned_user } = req.body;
       const userId = req.user.id;
 
-      console.log('UserLeadsController - Assigning lead:', {
-        leadId: id,
-        assignedTo: assigned_user,
-        requestedBy: userId
-      });
-
       // Verify if the lead belongs to the current user
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
@@ -686,7 +539,6 @@ const UserLeadsController = {
         .single();
 
       if (leadError || !leadData) {
-        console.log('UserLeadsController - Unauthorized lead assignment attempt');
         return res.status(403).json({
           success: false,
           error: 'Unauthorized to assign this lead'
@@ -703,17 +555,11 @@ const UserLeadsController = {
 
       if (error) throw error;
 
-      console.log('UserLeadsController - Lead assigned successfully:', {
-        leadId: id,
-        newAssignee: assigned_user
-      });
-
       res.json({
         success: true,
         data
       });
     } catch (error) {
-      console.error('UserLeadsController - Error assigning lead:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to assign lead',
@@ -724,8 +570,6 @@ const UserLeadsController = {
 
   getUsers: async (req, res) => {
     try {
-      console.log('UserLeadsController - Fetching users');
-
       const { data: users, error } = await supabase
         .from('users')
         .select(`
@@ -737,19 +581,13 @@ const UserLeadsController = {
         .eq('user_is_active', true)
         .order('name');
 
-      if (error) {
-        console.error('UserLeadsController - Error fetching users:', error);
-        throw error;
-      }
-
-      console.log('UserLeadsController - Users fetched:', users.length);
+      if (error) throw error;
 
       res.json({
         success: true,
         data: users
       });
     } catch (error) {
-      console.error('UserLeadsController - Error in getUsers:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch users',
@@ -772,7 +610,6 @@ const UserLeadsController = {
         data
       });
     } catch (error) {
-      console.error('Error in getGeneralSettings:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch general settings',
@@ -786,12 +623,6 @@ const UserLeadsController = {
       const { id } = req.params;
       const userId = req.user.id;
 
-      console.log('UserLeadsController - Fetching logs for lead:', {
-        leadId: id,
-        userId: userId
-      });
-
-      // Verify if the lead belongs to the current user
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
         .select('id')
@@ -800,27 +631,19 @@ const UserLeadsController = {
         .single();
 
       if (leadError || !leadData) {
-        console.log('UserLeadsController - Unauthorized log access attempt');
         return res.status(403).json({
           success: false,
           error: 'Unauthorized to view this lead\'s logs'
         });
       }
 
-      // Get logs using the imported function
       const logs = await getLeadLogs(id);
-      
-      console.log('UserLeadsController - Logs fetched successfully:', {
-        leadId: id,
-        logsCount: logs.length
-      });
 
       res.json({
         success: true,
         data: logs
       });
     } catch (error) {
-      console.error('UserLeadsController - Error fetching lead logs:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch lead logs',

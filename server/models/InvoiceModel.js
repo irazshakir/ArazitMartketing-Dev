@@ -117,14 +117,9 @@ const InvoiceModel = {
 
       const { data, error } = await query;
       
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw error;
-      }
-
+      if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error in findAll:', error);
       throw error;
     }
   },

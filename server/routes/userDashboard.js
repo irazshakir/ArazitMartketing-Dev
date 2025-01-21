@@ -17,12 +17,10 @@ const checkAuth = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    console.log('Received token:', token);
     
     try {
       // Verify the JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Decoded token:', decoded);
       
       // Check if session is active in database
       const { data: session, error: sessionError } = await supabase
@@ -31,9 +29,6 @@ const checkAuth = async (req, res, next) => {
         .eq('token', token)
         .eq('is_active', true)
         .single();
-
-      console.log('Session data:', session);
-      console.log('Session error:', sessionError);
 
       if (sessionError || !session) {
         return res.status(401).json({
@@ -49,9 +44,6 @@ const checkAuth = async (req, res, next) => {
         .eq('id', decoded.userId)
         .single();
 
-      console.log('User data:', userData);
-      console.log('User error:', userError);
-
       if (userError || !userData) {
         return res.status(401).json({
           status: 'error',
@@ -62,14 +54,12 @@ const checkAuth = async (req, res, next) => {
       req.user = userData;
       next();
     } catch (err) {
-      console.error('Token verification error:', err);
       return res.status(401).json({
         status: 'error',
         message: 'Invalid or expired token'
       });
     }
   } catch (error) {
-    console.error('Auth error:', error);
     res.status(401).json({
       status: 'error',
       message: 'Authentication failed'
@@ -81,7 +71,6 @@ const checkAuth = async (req, res, next) => {
 router.post('/generate-user-token', async (req, res) => {
   try {
     const { userId, role } = req.body;
-    console.log('Received token generation request:', { userId, role });
     
     if (!userId || !role) {
       return res.status(400).json({
@@ -99,7 +88,6 @@ router.post('/generate-user-token', async (req, res) => {
       .single();
 
     if (userError || !userData) {
-      console.error('User verification error:', userError);
       return res.status(404).json({
         status: 'error',
         message: 'User not found or inactive'
@@ -147,11 +135,9 @@ router.post('/generate-user-token', async (req, res) => {
       .single();
 
     if (sessionError) {
-      console.error('Session creation error:', sessionError);
       throw sessionError;
     }
 
-    console.log('Token generated successfully for user:', userId);
     res.json({
       status: 'success',
       token,
@@ -159,7 +145,6 @@ router.post('/generate-user-token', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Token generation error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to generate token',
