@@ -72,7 +72,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     setLoading(true);
     try {
       const userId = getLoggedInUserId();
-      console.log('Fetching chats with filter:', filter, 'search:', search);
 
       const response = await axios.get(`/api/webhook/filtered-chats?filter=${filter}&user_id=${userId}&searchQuery=${search}`);
       
@@ -122,7 +121,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
 
   // Add useEffect to fetch chats when tab changes
   useEffect(() => {
-    console.log('Tab or search changed:', activeTab, searchQuery);
     fetchFilteredChats(activeTab, searchQuery);
   }, [activeTab]); // Remove searchQuery from dependencies since we're using debounce
 
@@ -161,8 +159,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     setSocket(newSocket);
 
     newSocket.on('new_whatsapp_message', (message) => {
-      console.log('📩 New message received in ChatList:', message);
-      
       setUnreadCounts(prev => ({
         ...prev,
         [message.leadId]: message.unreadCount || prev[message.leadId] || 0
@@ -312,7 +308,6 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
     setSocket(newSocket);
 
     newSocket.on('unread_counts_update', (counts) => {
-      console.log('Received unread counts update:', counts); // Debug log
       setTabBadges({
         unassigned: counts.unassigned || 0,
         mine: counts.mine || 0
@@ -396,11 +391,7 @@ const ChatList = ({ onChatSelect, selectedChatId }) => {
   };
 
   const renderItem = (chat) => {
-    console.log('Rendering chat:', chat);
-    console.log('Unread counts:', unreadCounts);
-    
     if (!chat || !chat.id) {
-      console.log('Invalid chat object:', chat);
       return null;
     }
 

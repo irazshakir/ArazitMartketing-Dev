@@ -55,10 +55,7 @@ const AdminDashboard = () => {
       setLoading(true);
       const response = await axios.get('/api/dashboard/branches');
       
-      console.log('Branch API Response:', response); // Debug log
-      
       const branchData = response.data?.data || [];
-      console.log('Branch Data:', branchData); // Debug log
       
       const branchOptions = [
         { value: 'all', label: 'All Branches' },
@@ -68,11 +65,8 @@ const AdminDashboard = () => {
         }))
       ];
       
-      console.log('Branch Options:', branchOptions); // Debug log
-      
       setBranches(branchOptions);
     } catch (error) {
-      console.error('Error fetching branches:', error);
       setBranches([{ value: 'all', label: 'All Branches' }]);
     } finally {
       setLoading(false);
@@ -101,7 +95,6 @@ const AdminDashboard = () => {
         setDashboardStats(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       setDashboardStats({
         todayLeads: 0,
         newCustomers: 0,
@@ -133,8 +126,6 @@ const AdminDashboard = () => {
     const [start, end] = dates;
     const startDate = start.format('YYYY-MM-DD');
     const endDate = end.format('YYYY-MM-DD');
-
-    console.log('Date range selected:', { startDate, endDate }); // Debug log
 
     fetchDashboardStats({
       startDate,

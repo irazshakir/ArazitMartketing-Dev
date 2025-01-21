@@ -80,8 +80,6 @@ const UserDashboard = () => {
         return;
       }
 
-      console.log('Fetching stats with token:', token);
-
       const response = await axios.get('/api/user-dashboard/stats', {
         params: {
           timeRange: options.timeRange || selectedTimeRange,
@@ -96,26 +94,10 @@ const UserDashboard = () => {
         }
       });
 
-      console.log('Stats response:', response.data);
-
       if (response.data?.success) {
         setDashboardStats(response.data.data);
       }
     } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        token: localStorage.getItem('user_jwt')
-      });
-
-      if (error.response?.status === 401) {
-        message.error('Session expired. Please login again');
-        // Redirect to login page
-        window.location.href = '/login';
-        return;
-      }
-
       message.error('Failed to fetch dashboard statistics');
       setDashboardStats({
         todayLeads: 0,

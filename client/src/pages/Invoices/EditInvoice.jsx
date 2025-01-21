@@ -55,16 +55,12 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
     try {
       if (!invoice || !invoice.id) return;
       
-      console.log('Fetching items for invoice:', invoice.id);
-      
       const response = await fetch(`http://localhost:5000/api/invoices/${invoice.id}/items`);
       if (!response.ok) {
-        console.error('Response status:', response.status);
         throw new Error('Failed to fetch invoice items');
       }
       
       const data = await response.json();
-      console.log('Received items:', data);
       
       const formattedItems = data.map(item => ({
         key: item.id,
@@ -79,7 +75,6 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
       const total = formattedItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       setTotalAmount(total);
     } catch (error) {
-      console.error('Error fetching items:', error);
       message.error('Failed to fetch invoice items');
     }
   };
@@ -92,10 +87,8 @@ const EditInvoice = ({ invoice, visible, onClose, onUpdate }) => {
       if (!response.ok) throw new Error('Failed to fetch payment history');
       
       const data = await response.json();
-      console.log('Payment history:', data); // Debug log
       setPaymentHistory(data);
     } catch (error) {
-      console.error('Error fetching payment history:', error);
       message.error('Failed to fetch payment history');
     }
   };

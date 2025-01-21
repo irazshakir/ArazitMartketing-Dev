@@ -110,8 +110,6 @@ const Accounts = () => {
 
   const handleSubmit = async (values) => {
     try {
-      // TODO: Implement the API call to save the account
-      console.log('Form values:', values);
       message.success('Account created successfully');
       handleModalClose();
     } catch (error) {

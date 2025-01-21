@@ -42,7 +42,6 @@ const Conversations = () => {
 
         setLeads(formattedLeads);
       } catch (error) {
-        console.error('Error fetching leads:', error);
         message.error('Failed to fetch leads');
       } finally {
         setLoading(false);
@@ -58,7 +57,6 @@ const Conversations = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          console.error('No token found');
           message.error('Please login again');
           return;
         }
@@ -74,7 +72,6 @@ const Conversations = () => {
           setCurrentUser(response.data.data);
         }
       } catch (error) {
-        console.error('Error fetching current user:', error);
         message.error('Failed to get current user');
       }
     };
@@ -105,7 +102,6 @@ const Conversations = () => {
         ...response.data // Merge the detailed lead data
       });
     } catch (error) {
-      console.error('Error fetching lead details:', error);
       message.error('Failed to fetch lead details');
     }
   };
@@ -126,13 +122,10 @@ const Conversations = () => {
 
       if (response.data.success) {
         // Update local state if needed
-        console.log('✅ Message sent successfully');
       } else {
-        console.error('Failed to send message:', response.data.error);
         message.error('Failed to send message');
       }
     } catch (error) {
-      console.error('Error sending message:', error);
       message.error('Failed to send message');
     }
   };

@@ -48,7 +48,6 @@ const Sidebar = () => {
           navigate('/login');
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
         navigate('/login');
       }
     };
@@ -228,7 +227,7 @@ const Sidebar = () => {
       localStorage.removeItem('user_jwt');
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
+      navigate('/login');
     }
   };
 

@@ -40,8 +40,7 @@ const Login = () => {
           }
         }
       } catch (error) {
-        console.error('Session verification failed:', error);
-        // Clear invalid token
+        message.error('Session verification failed');
         localStorage.removeItem('token');
       }
     };
@@ -72,7 +71,8 @@ const Login = () => {
               localStorage.setItem('user_jwt', jwtResponse.token);
             }
           } catch (jwtError) {
-            console.error('JWT generation failed:', jwtError);
+            message.error('Failed to generate user token');
+            return;
           }
         }
       }

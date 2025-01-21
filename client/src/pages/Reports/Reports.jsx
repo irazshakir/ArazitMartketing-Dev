@@ -81,7 +81,6 @@ const Reports = () => {
       
       setBranches(branchOptions);
     } catch (error) {
-      console.error('Error fetching branches:', error);
       setBranches([{ value: 'all', label: 'All Branches' }]);
     } finally {
       setLoading(false);
@@ -99,7 +98,6 @@ const Reports = () => {
       });
       setReportStats(response.data?.data || {});
     } catch (error) {
-      console.error('Error fetching report stats:', error);
       setReportStats({
         newLeads: 0,
         activeLeads: 0,
@@ -126,7 +124,6 @@ const Reports = () => {
       });
       setUserStats(response.data);
     } catch (error) {
-      console.error('Error fetching user stats:', error);
       message.error('Failed to fetch user statistics');
       setUserStats([]);
     } finally {
@@ -146,7 +143,6 @@ const Reports = () => {
       });
       setTrendData(response.data);
     } catch (error) {
-      console.error('Error fetching trend data:', error);
       message.error('Failed to fetch trend data');
       setTrendData([]);
     } finally {
@@ -166,7 +162,6 @@ const Reports = () => {
       });
       setProductStats(response.data);
     } catch (error) {
-      console.error('Error fetching product stats:', error);
       message.error('Failed to fetch product statistics');
       setProductStats([]);
     } finally {
@@ -186,7 +181,6 @@ const Reports = () => {
       });
       setProductTrendData(response.data);
     } catch (error) {
-      console.error('Error fetching product trend data:', error);
       message.error('Failed to fetch product trend data');
       setProductTrendData([]);
     } finally {

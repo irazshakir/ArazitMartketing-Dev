@@ -62,7 +62,8 @@ const ChatInfo = ({
           followDate: leadDetails.fu_date || null
         }));
       } catch (error) {
-        console.error('Error fetching lead details:', error);
+        // Remove this log
+        // console.error('Error fetching lead details:', error);
       }
     };
 
@@ -86,7 +87,8 @@ const ChatInfo = ({
         setLeadSources(sourcesRes.data);
         setBranches(branchesRes.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        // Remove this log
+        // console.error('Error fetching data:', error);
       }
     };
 
@@ -115,7 +117,8 @@ const ChatInfo = ({
         throw new Error('Update failed');
       }
     } catch (error) {
-      console.error('Failed to update lead:', error);
+      // Remove this log
+      // console.error('Failed to update lead:', error);
       message.error(error.response?.data?.message || 'Failed to update lead');
     }
   };

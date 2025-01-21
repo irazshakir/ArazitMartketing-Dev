@@ -53,16 +53,12 @@ const LeadEdit = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        // Get token from localStorage
         const token = localStorage.getItem('token');
-        
         if (!token) {
-          console.error('No token found');
           message.error('Please login again');
           return;
         }
 
-        // Make sure to send token in correct format
         const response = await axios.get('/api/current-user', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -74,12 +70,7 @@ const LeadEdit = () => {
           setCurrentUser(response.data.data);
         }
       } catch (error) {
-        console.error('Error fetching current user:', error);
-        if (error.response?.status === 401) {
-          message.error('Session expired. Please login again');
-        } else {
-          message.error('Failed to get current user');
-        }
+        message.error('Failed to get current user');
       }
     };
 
@@ -109,7 +100,6 @@ const LeadEdit = () => {
       }
     } catch (error) {
       message.error('Failed to add note');
-      console.error('Error adding note:', error);
     }
   };
 

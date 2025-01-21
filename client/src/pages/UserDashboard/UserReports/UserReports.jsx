@@ -44,7 +44,6 @@ const UserReports = () => {
       });
       setReportStats(response.data?.data || {});
     } catch (error) {
-      console.error('Error fetching report stats:', error);
       message.error('Failed to fetch report statistics');
     } finally {
       setLoading(false);

@@ -29,26 +29,17 @@ export const authService = {
       // 4. For user role, generate JWT token first
       if (userData.roles.role_name === 'user') {
         try {
-          console.log('Attempting to generate JWT for user:', userData.id);
           const jwtResponse = await this.generateUserToken({
             userId: userData.id,
             role: userData.roles.role_name
           });
 
           if (jwtResponse.status === 'success') {
-            console.log('JWT generated successfully');
             sessionToken = jwtResponse.token;
             sessionData = jwtResponse.session;
             localStorage.setItem('user_jwt', jwtResponse.token);
-          } else {
-            console.error('Invalid JWT response:', jwtResponse);
           }
         } catch (jwtError) {
-          console.error('JWT generation failed:', {
-            error: jwtError,
-            response: jwtError.response?.data,
-            status: jwtError.response?.status
-          });
           // Continue with normal flow even if JWT generation fails
         }
       }
@@ -97,7 +88,6 @@ export const authService = {
         token: sessionToken
       };
     } catch (error) {
-      console.error('Sign in error:', error);
       throw new Error(error.message || 'Failed to sign in');
     }
   },
@@ -108,11 +98,10 @@ export const authService = {
       if (sessionStr) {
         const session = JSON.parse(sessionStr);
         
-        // Update session status in database
         await supabase
           .from('sessions')
           .update({ 
-            is_active: false, // Using boolean false
+            is_active: false,
             last_activity_at: new Date().toISOString()
           })
           .eq('id', session.id);
@@ -121,7 +110,6 @@ export const authService = {
       localStorage.removeItem('session');
       localStorage.removeItem('user');
     } catch (error) {
-      console.error('Sign out error:', error);
       throw new Error(error.message || 'Failed to sign out');
     }
   },
@@ -159,7 +147,6 @@ export const authService = {
         userData: userData
       };
     } catch (error) {
-      console.error('Get current user error:', error);
       localStorage.removeItem('session');
       localStorage.removeItem('user');
       localStorage.removeItem('user_jwt');
@@ -191,21 +178,14 @@ export const authService = {
 
   generateUserToken: async (userData) => {
     try {
-      console.log('Generating user token for:', userData);
       const response = await axios.post('/api/generate-user-token', userData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
-      console.log('Token generation response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error generating user token:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       throw error;
     }
   }

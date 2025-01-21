@@ -45,12 +45,9 @@ const inlineStyles = {
 // Helper function to safely convert PostgreSQL timestamp to Unix timestamp
 const postgresTimestampToUnix = (pgTimestamp) => {
   try {
-    // Handle PostgreSQL timestamp with timezone format
-    // Example: 2025-01-14 20:58:04.102689+00
     return Math.floor(new Date(pgTimestamp).getTime() / 1000);
   } catch (error) {
-    console.error('Error converting timestamp:', error);
-    return Math.floor(Date.now() / 1000); // Fallback to current time
+    return Math.floor(Date.now() / 1000);
   }
 };
 
